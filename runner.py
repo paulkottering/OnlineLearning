@@ -209,9 +209,9 @@ def main(**kwargs):
     # Dimension of Problem
     n = kwargs.get("strategynumber")
 
-    #game = rand.randint(-12500, 12501, (n, n)) / 100000
-    game = np.ones((n, n)) * -0.1
-    game[5,19] = 0.125
+    game = rand.randint(-12500, 12501, (n, n)) / 100000
+    #game = np.ones((n, n)) * -0.1
+    #game[5,19] = 0.125
 
     MaxPotential = np.max(game)
     MinPotential = np.min(game)
@@ -450,9 +450,9 @@ def main(**kwargs):
     fig.set_figwidth(15)
     # plot the first array using the left y-axis
     ax1.plot(Vs, color='red')
-    ax1.plot(Ps, color='green')
+    #ax1.plot(Ps, color='green')
     ax1.set_xlabel('Iterations')
-    ax1.set_ylabel('True Potential of Optimistic Potential Function Estimate Maximum', color='red')
+    ax1.set_ylabel('True YP Value of Optimistic YP Estimate Maximum', color='red')
     ax1.axhline(y=np.max(UnknownYP), color='r', linestyle='--')
     #ax1.axhline(y=np.max(game), color='r', linestyle='--')
 
@@ -472,7 +472,7 @@ def main(**kwargs):
 
     # plot the second array using the right y-axis
     ax3.plot(Gaps, color='orange', label='Gap')
-    ax3.set_ylabel('% of Optimistic Estimates less than Pessimistic Maximum', color='orange')
+    ax3.set_ylabel('% of YP Optimistic Estimates less than Pessimistic YP Maximum', color='orange')
     ax3.spines.right.set_position(("axes", 1.05))
 
     # set the title of the plot
