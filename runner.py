@@ -17,178 +17,112 @@ def parse_args():
                         help='Optimistic Constant')
     return parser.parse_args()
 
-def OptYPInitCalc_old(mat, n,k):
+def OptPesYPInitCalc(KnownU, n, k):
     """
     Calculate the YP component
     """
-    nex = np.zeros((n, n))
-    for a in range(n):
+    OptYP = np.ones((n, n)) *( ((n - 1) ** 2 / (n ** 2)) * k + ((n-1)**2) / (n ** 2) * k + (2*n-1)*((-n + 1) / (n ** 2)) * (0.5-k))
 
-        for b in range(n):
-            val = 0
+    PesYP = np.ones((n, n)) *( ((n - 1) ** 2 / (n ** 2)) * (0.5-k) + ((n-1)**2) / (n ** 2) * (0.5-k) + (2*n-1)*((-n + 1) / (n ** 2)) * k)
 
-            for i in range(n):
-                const1 = True if i == a else False
+    # a = 0
+    # for b in range(n):
+    #     OptYP,PesYP = OptPesYPUpdate(OptYP,PesYP, a, b, KnownU[a,b],n,k)
+    #
+    # b = 0
+    # for a in range(n - 1):
+    #     OptYP,PesYP = OptPesYPUpdate(OptYP,PesYP, a+1, b, KnownU[a+1,b],n,k)
 
-                for j in range(n):
-                    const2 = True if j == b else False
+    return OptYP,PesYP
 
-                    if (not const1) and (not const2):
-                        if not np.isnan(mat[i, j]):
-                            val += mat[i, j] / (n ** 2)
-                        else:
-                            val += 1 / (n ** 2) * k
-
-                    elif const1 and const2:
-                        if not np.isnan(mat[i, j]):
-                            val += mat[i, j] * (n - 1) ** 2 / (n ** 2)
-                        else:
-                            val += (n - 1) ** 2 / (n ** 2) * k
-                    else:
-                        if not np.isnan(mat[i, j]):
-                            val += mat[i, j] * (-n + 1) / (n ** 2)
-                        else:
-                            val += (-n + 1) / (n ** 2) * (0.5-k)
-            nex[a, b] = val
-    return nex
-
-def PesYPInitCalc_old(mat,n,k):
+def OptPesY1InitCalc(KnownU, n, k):
     """
-    Calculate Pessimistic YP component
+    Calculate the Optimistic Y1 Component
     """
-    nex = np.zeros((n, n))
-    for a in range(n):
+    OptY1 = np.ones(n) * (((n - 1)*n / (n ** 2)) * k - (n - 1)*n / (n ** 2)*(0.5-k))
+    PesY1 = np.ones(n) * (((n - 1)*n / (n ** 2)) *(0.5-k) - (n - 1)*n / (n ** 2)*k)
 
-        for b in range(n):
-            val = 0
+    # a = 0
+    # for b in range(n):
+    #     OptY1,PesY1 = OptPesY1Update(OptY1,PesY1, a, b, KnownU[a,b],n,k)
+    #
+    # b = 0
+    # for a in range(n - 1):
+    #     OptY1,PesY1 = OptPesY1Update(OptY1,PesY1, a+1, b, KnownU[a+1,b],n,k)
 
-            for i in range(n):
-                const1 = True if i == a else False
+    return OptY1,PesY1
 
-                for j in range(n):
-                    const2 = True if j == b else False
-
-                    if (not const1) and (not const2):
-                        if not np.isnan(mat[i, j]):
-                            val += mat[i, j] / (n ** 2)
-                        else:
-                            val += 1 / (n ** 2) * (0.5-k)
-
-                    elif const1 and const2:
-                        if not np.isnan(mat[i, j]):
-                            val += mat[i, j] * (n - 1) ** 2 / (n ** 2)
-                        else:
-                            val += (n - 1) ** 2 / (n ** 2) * (0.5-k)
-
-                    else:
-                        if not np.isnan(mat[i, j]):
-                            val += mat[i, j] * (-n + 1) / (n ** 2)
-                        else:
-                            val += (-n + 1) / (n ** 2) * (k)
-            nex[a, b] = val
-    return nex
-
-def OptYPInitCalc(mat, n, k):
+def OptPesY2InitCalc(KnownU, n, k):
     """
-    Calculate the YP component
+    Calculate the Optimistic Y1 Component
     """
-    nex = np.ones((n, n)) * ((n - 1) ** 2 / (n ** 2))
+    OptY2 = np.ones(n) * (((n - 1) * n / (n ** 2)) * k - (n - 1) * n / (n ** 2) * (0.5 - k))
+    PesY2 = np.ones(n) * (((n - 1) * n / (n ** 2)) * (0.5 - k) - (n - 1) * n / (n ** 2) * k)
 
-    a = 0
-    for b in range(n):
-        OptYPUpdate(mat, nex, n, a, b, mat[a, b], k)
+    # a = 0
+    # for b in range(n):
+    #     OptY2, PesY2 = OptPesY2Update(OptY2, PesY2, a, b, KnownU[a, b], n, k)
+    #
+    # b = 0
+    # for a in range(n - 1):
+    #     OptY2, PesY2 = OptPesY2Update(OptY2, PesY2, a + 1, b, KnownU[a + 1, b], n, k)
 
-    b = 0
-    for a in range(n - 1):
-        OptYPUpdate(mat, nex, n, a + 1, b, mat[a + 1, b], k)
+    return OptY2, PesY2
 
-    return nex
-
-def PesYPInitCalc(mat, n, k):
-    """
-    Calculate the YP component
-    """
-    nex = -np.ones((n, n)) * ((n - 1) ** 2 / (n ** 2))
-
-    a = 0
-    for b in range(n):
-        PesYPUpdate(mat, nex, n, a, b, k)
-
-    b = 0
-    for a in range(n - 1):
-        PesYPUpdate(mat, nex, n, a + 1, b, k)
-
-    return nex
-
-def OptYPUpdate(mat, YP, n, a, b, newval,k):
+def OptPesYPUpdate(OptYP,PesYP, a, b, Val,n,k):
     """
     Update the YP matrix based on a new sample in the utility matrix
 
     Arguments:
-    mat -- the utility matrix
-    YP -- the YP matrix
-    n -- the size of the matrices
-    a -- the row index of the new sample
-    b -- the column index of the new sample
-    newval -- new sample value
+
 
     Returns:
-    mat -- the updated utility matrix
     YP -- the updated YP matrix
     """
 
-    mat[a,b] = newval
-
     # Update the YP matrix using the new sample
     for i in range(n):
-        # Check if the row index is the same as the new sample
+
         const1 = True if i == a else False
         for j in range(n):
-            # Check if the column index is the same as the new sample
+
             const2 = True if j == b else False
 
-            #Update the optimistic value with the true value with relevant weights
             if (not const1) and (not const2):
-                YP[i, j] += mat[a, b] / (n ** 2) - 1 / (n ** 2) * k
+                OptYP[i, j] += (Val - k) / (n ** 2)
+                PesYP[i, j] += (Val - (0.5 - k)) / (n ** 2)
             elif const1 and const2:
-                YP[i, j] += mat[a, b] * (n - 1) ** 2 / (n ** 2) - (n - 1) ** 2 / (n ** 2) * k
+                OptYP[i, j] += (Val - k)*(n - 1) ** 2 / (n ** 2)
+                PesYP[i, j] += (Val - (0.5 - k)) * (n - 1) ** 2 / (n ** 2)
             else:
-                YP[i, j] += mat[a, b] * (-n + 1) / (n ** 2) - (-n + 1) / (n ** 2) * (0.5-k)
-    return mat, YP
+                OptYP[i, j] += (Val - (0.5 - k)) * (-n + 1) / (n ** 2)
+                PesYP[i, j] += (Val - k) * (-n + 1) / (n ** 2)
+    return OptYP,PesYP
 
-def PesYPUpdate(mat, YP, n, a, b,k):
-    """
-    Update the YP matrix based on a new sample in the utility matrix
+def OptPesY1Update(OptY1,PesY1, a, b, Val,n,k):
 
-    Arguments:
-    mat -- the utility matrix
-    YP -- the YP matrix
-    n -- the size of the matrices
-    a -- the row index of the new sample
-    b -- the column index of the new sample
-    newval -- new sample value
-
-    Returns:
-    mat -- the updated utility matrix
-    YP -- the updated YP matrix
-    """
-
-
-    # Update the YP matrix using the new sample
+    # Update the Y1 matrix using the new sample
     for i in range(n):
-        # Check if the row index is the same as the new sample
-        const1 = True if i == a else False
         for j in range(n):
-            # Check if the column index is the same as the new sample
-            const2 = True if j == b else False
-            #Update the optimistic value with the true value with relevant weights
-            if (not const1) and (not const2):
-                YP[i, j] += mat[a, b] / (n ** 2) - 1 / (n ** 2) * (0.5-k)
-            elif const1 and const2:
-                YP[i, j] += mat[a, b] * (n - 1) ** 2 / (n ** 2) - (n - 1) ** 2 / (n ** 2) * (0.5-k)
+            if i == a:
+                OptY1[i, j] += (n - 1) / (n ** 2)(Val - k)
+                PesY1[i, j] += (n - 1) / (n ** 2)(Val - (0.5-k))
             else:
-                YP[i, j] += mat[a, b] * (-n + 1) / (n ** 2) - (-n + 1) / (n ** 2) * k
-    return YP
+                OptY1[i, j] += (- 1) / (n ** 2)(Val - (0.5-k))
+                PesY1[i, j] += (- 1) / (n ** 2)(Val - k)
+    return OptY1,PesY1
+
+def OptPesY2Update(OptY2,PesY2, a, b, Val,n,k):
+    # Update the Y2 matrix using the new sample
+    for i in range(n):
+        for j in range(n):
+            if j == b:
+                OptY2[i, j] += (n - 1) / (n ** 2)(Val - k)
+                PesY2[i, j] += (n - 1) / (n ** 2)(Val - (0.5-k))
+            else:
+                OptY2[i, j] += (- 1) / (n ** 2)(Val - (0.5-k))
+                PesY2[i, j] += (- 1) / (n ** 2)(Val - k)
+    return OptY2,PesY2
 
 def FindNash(game):
     one_max_indices = np.argmax(game, axis=0)
@@ -203,6 +137,60 @@ def FindNash(game):
             NashIndices.append([i,one_max_indices[i]])
 
     return NashIndices
+
+def sample(i,j,matrices, n, k):
+    """
+    Performs a sample of the UnknownU1 and updates all the relevant matrices.
+    The joint strategy provided must not have been sample before.
+    :param i: Strategy of Player 1
+    :param j: Strategy of Player 2
+    :matrices: List of matrices
+    :return: Updated Matrices
+    """
+    UnknownU1 = matrices[0]
+    UnknownU2 = matrices[1]
+
+    KnownU1 = matrices[2]
+    KnownU2 = matrices[3]
+
+    OptYP1 = matrices[4]
+    OptYP2 = matrices[5]
+
+    PesYP1 = matrices[6]
+    PesYP2 = matrices[7]
+
+    OptY1 = matrices[8]
+    OptY2 = matrices[9]
+
+    PesY1 = matrices[10]
+    PesY2 = matrices[11]
+
+    # Sample UnknownU1 and Unknown U2
+    U1Val = UnknownU1[i, j]
+    U2Val = UnknownU2[i, j]
+
+    # Update KnownU1 and KnownU2
+    KnownU1[i, j] = U1Val
+    KnownU2[i, j] = U2Val
+
+    # Update OptU1, PesU1, OptU2, PesU2
+
+    # Update OptY1,PesY1
+    OptY1,PesY1 = OptPesY1Update(OptY1,PesY1, i, j, U1Val, n, k)
+
+    # Update OptY2,PesY2
+    OptY2,PesY2 = OptPesY2Update(OptY2,PesY2, i, j, U2Val, n, k)
+
+    # Update OptYP1,PesYP1
+    OptYP1,PesYP1 = OptPesY1Update(OptYP1,PesYP1, i, j, U1Val, n, k)
+
+    # Update OptYP2,PesYP2
+    OptYP2,PesYP2 = OptPesYPUpdate(OptYP2,PesYP2, i, j, U2Val, n, k)
+
+    #Update Potential Bounds
+    matrices = [UnknownU1, UnknownU2, KnownU1, KnownU2, OptYP1, OptYP2, PesYP1, PesYP2, OptY1, OptY2, PesY1, PesY2]
+
+    return matrices
 
 def main(**kwargs):
 
@@ -232,6 +220,7 @@ def main(**kwargs):
         UnknownU2[:, -2 - i] = UnknownU2[:, -1 - i] + game[:, -2 - i] - game[:, -1 - i]
         UnknownU1[-2 - i, :] = UnknownU1[-1 - i, :] + game[-2 - i, :] - game[-1 - i]
 
+    #Rewards are between 0 and 0.5
     UnknownU1 += 0.25
     UnknownU2 += 0.25
 
@@ -243,55 +232,25 @@ def main(**kwargs):
     UnknownY2 = np.matmul(Xi, np.matmul(UnknownU2, Phi))[0, :]
     UnknownYP = np.matmul(Phi, np.matmul(UnknownU1, Phi))
 
-    UnknownY1 = UnknownY1 - UnknownY1[0] + 0.5
-    UnknownY2 = UnknownY2 - UnknownY2[0] + 0.5
-
-    #Prepare arrays for savings the sampled utility difference sums
-    Sum1 = np.zeros(n)
-    Sum2 = np.zeros(n)
-
-    Sum1[0] = 0.5
-    Sum2[0] = 0.5
-
     # Prepare arrays for known samples
     KnownU2 = np.full((n, n), np.nan)
     KnownU1 = np.full((n, n), np.nan)
 
-    # Initialize First Player Fixed Values
-    KnownU1[0, 0] = UnknownU1[0, 0]
-    KnownU2[0, 0] = UnknownU2[0, 0]
-
-    # Update KnownU1, KnownU2, and Sum1/Sum2
-    KnownU1[0, 1:] = UnknownU1[0, 1:]
-    KnownU2[0, 1:] = UnknownU2[0, 1:]
-    Sum1[1:] = KnownU1[0, 1:] - KnownU1[0, 0] + 0.5
-
-    KnownU2[1:, 0] = UnknownU2[1:, 0]
-    KnownU1[1:, 0] = UnknownU1[1:, 0]
-    Sum2[1:] = KnownU2[1:, 0] - KnownU2[0, 0] + 0.5
-
-    N1 = np.ones(n)
-    N2 = np.ones(n)
-
     t = 1
-    previous = 0
-    eps = 0.01
-    diff = 2
 
     Vs = []
-    Ps = []
-    Percent1 = []
-    Percent2 = []
+    Percent = []
     Nash = []
     Gaps = []
 
     k = kwargs.get("optimismconstant")
 
-    YP1 = OptYPInitCalc(KnownU1, n,k)
-    YP2 = OptYPInitCalc(KnownU2, n,k)
+    OptYP1,PesYP1 = OptPesYPInitCalc(KnownU1, n,k)
+    OptYP2,PesYP2 = OptPesYPInitCalc(KnownU2, n,k)
 
-    YP1Pes = PesYPInitCalc(KnownU1, n,k)
-    YP2Pes = PesYPInitCalc(KnownU2, n,k)
+    OptY1,PesY1 = OptPesY1InitCalc(KnownU2, n,k)
+    OptY2,PesY2 = OptPesY2Update(KnownU2, n,k)
+
 
     ## Loop Until we reach convergence
 
@@ -301,127 +260,89 @@ def main(**kwargs):
     for index in np.ndindex(game.shape):
         active_indices.append(list(index))
 
+
+    matrices = [UnknownU1, UnknownU2, KnownU1, KnownU2, OptYP1, OptYP2, PesYP1, PesYP2, OptY1, OptY2, PesY1, PesY2]
+    for i in range(n):
+        matrices = sample(i, i, matrices, n, k)
+
+
     while t < t_max:
-        # Optimistic estimates of factor matrix vectors
-        OptY1 = Sum1 / N1 + np.sqrt(np.log(t)/N1)
-        OptY2 = Sum2 / N2 + np.sqrt(np.log(t)/N2)
 
-        # Pessimistic estimates of factor matrix vectors
-        PesY1 = Sum1 / N1 - np.sqrt(np.log(t) / N1)
-        PesY2 = Sum2 / N2 - np.sqrt(np.log(t) / N2)
+        KnownU1 = matrices[2]
+        KnownU2 = matrices[3]
 
-        YP = (YP1)
+        OptYP1 = matrices[4]
+        OptYP2 = matrices[5]
 
-        YPes = (YP1Pes)
+        PesYP1 = matrices[6]
+        PesYP2 = matrices[7]
+
+        OptY1 = matrices[8]
+        OptY2 = matrices[9]
+
+        PesY1 = matrices[10]
+        PesY2 = matrices[11]
+
+        OptYP = np.minimum(OptYP1, OptYP2)
+        PesYP = np.maximum(PesYP1, PesYP2)
 
         # Optimistic potential matrix estimate
-        CurrentPotentialEstimate = YP + np.array([OptY1] * len(OptY1)).T + np.array([OptY2] * len(OptY2))
-        CurrentPotentialEstimate = YP
+        OptPhi = OptYP + np.array([OptY1] * n).T + np.array([OptY2] * n)
 
         # Pessimistic potential matrix estimate
-        PessimisticPotentialEstimate = YPes + np.array([OptY1] * len(OptY1)).T + np.array([OptY2] * len(OptY2))
-        PessimisticPotentialEstimate = YPes
+        PesPhi = PesYP + np.array([PesY1] * n).T + np.array([PesY2] * n)
 
         # Find maximum of potential matrix estimate
-        ind1, ind2 = np.unravel_index(np.argmax(CurrentPotentialEstimate, axis=None),
-                                      CurrentPotentialEstimate.shape)
+        ind1, ind2 = np.unravel_index(np.argmax(OptPhi, axis=None),OptPhi.shape)
 
+        nan_new_act = []
         new_act = []
+        indices = []
+        for index in np.ndindex(game.shape):
+            indices.append(list(index))
 
-        for ind in active_indices:
-            if CurrentPotentialEstimate[ind[0],ind[1]] > np.max(PessimisticPotentialEstimate):
+        for ind in indices:
+            if OptPhi[ind[0],ind[1]] >= np.max(PesPhi):
+                if np.isnan(KnownU1[ind[0],ind[1]]):
+                    nan_new_act.append(ind)
                 new_act.append(ind)
 
-        one = False
-        two = False
+        if len(new_act) == 1:
+            break
 
-        if len(new_act) != 0:
-            active_indices = np.array(new_act)
-            rand_active_ind = np.random.choice(range(len(active_indices)), size=1, replace=False)
+        if np.isnan(KnownU1[ind1, ind2]):
+            matrices = sample(ind1, ind2, matrices, n, k)
 
-            rand_ind1 = active_indices[rand_active_ind][0][0]
-            rand_ind2 = active_indices[rand_active_ind][0][1]
+        if len(nan_new_act) >= 1:
+            nan_active_indices = np.array(nan_new_act)
+            rand_active_ind = np.random.choice(range(len(nan_active_indices)), size=1, replace=False)
 
-            if np.isnan(KnownU1[rand_ind1, rand_ind2]):
-                KnownU1,YP1 = OptYPUpdate(KnownU1, YP1, n, rand_ind1, rand_ind2, UnknownU1[rand_ind1, rand_ind2],k)
-                YP1Pes = PesYPUpdate(KnownU1, YP1Pes, n, rand_ind1, rand_ind2, k)
+            rand_active_ind1 = nan_active_indices[rand_active_ind][0][0]
+            rand_active_ind2 = nan_active_indices[rand_active_ind][0][1]
 
-                One = KnownU1[rand_ind1, rand_ind2] - KnownU1[0, rand_ind2]
-                Sum1[rand_ind1] += One + 0.5
-                N1[rand_ind1] += 1
-                one = True
-            if np.isnan(KnownU2[rand_ind1, rand_ind2]):
-                KnownU2,YP2 = OptYPUpdate(KnownU2, YP2, n, rand_ind1, rand_ind2, UnknownU2[rand_ind1, rand_ind2],k)
-                YP2Pes = PesYPUpdate(KnownU2, YP2Pes, n, rand_ind1, rand_ind2 ,k)
+            matrices = sample(rand_active_ind1, rand_active_ind2, matrices, n, k)
 
-                # Update samples for other components
-                Two = KnownU2[rand_ind1, rand_ind2] - KnownU2[rand_ind1, 0]
-                Sum2[rand_ind2] += Two + 0.5
-                N2[rand_ind2] += 1
-                two = True
-
-        if (two is False) and (one is False) and (np.isnan(KnownU1).any()):
-            print(np.argwhere(np.isnan(KnownU1))[0])
+        else:
             rand_ind1 = np.argwhere(np.isnan(KnownU1))[0][0]
             rand_ind2 = np.argwhere(np.isnan(KnownU1))[0][1]
-            KnownU1, YP1 = OptYPUpdate(KnownU1, YP1, n, rand_ind1, rand_ind2, UnknownU1[rand_ind1, rand_ind2], k)
-            YP1Pes = PesYPUpdate(KnownU1, YP1Pes, n, rand_ind1, rand_ind2, k)
-
-            One = KnownU1[rand_ind1, rand_ind2] - KnownU1[0, rand_ind2]
-            Sum1[rand_ind1] += One + 0.5
-            N1[rand_ind1] += 1
+            matrices = sample(rand_ind1, rand_ind2, matrices, n, k)
 
         PesGap = np.count_nonzero(CurrentPotentialEstimate < np.max(PessimisticPotentialEstimate))/(n**2) * 100
-
-        #Maximum Potential Value
-        MaxV = CurrentPotentialEstimate[ind1, ind2]
 
         #Sample new estimates
         if np.any(np.isnan(KnownU1[ind1,:])):
             other2 = np.nanargmin(KnownU1[ind1,:])
-        else:
-            other2 = rand.randint(0, n)
+            matrices = sample(ind1, other2, matrices, n, k)
 
         if np.any(np.isnan(KnownU2[:, ind2])):
             other1 = np.nanargmin(KnownU2[:, ind2])
-        else:
-            other1 = rand.randint(0, n)
-
-        if np.isnan(KnownU1[ind1, other2]):
-            KnownU1,YP1 = OptYPUpdate(KnownU1, YP1, n, ind1, other2, UnknownU1[ind1, other2], k)
-            YP1Pes = PesYPUpdate(KnownU1, YP1Pes, n, ind1, other2,  k)
-
-        if np.isnan(KnownU2[other1, ind2]):
-            KnownU2,YP2 = OptYPUpdate(KnownU2, YP2, n, other1, ind2, UnknownU2[other1, ind2],k)
-            YP2Pes = PesYPUpdate(KnownU2, YP2Pes, n, other1, ind2, k)
-
-        if np.isnan(KnownU1[ind1, ind2]):
-            KnownU1,YP1 = OptYPUpdate(KnownU1, YP1, n, ind1, ind2, UnknownU1[ind1, ind2],k)
-            YP1Pes = PesYPUpdate(KnownU1, YP1Pes, n, ind1, ind2, k)
-
-        if np.isnan(KnownU2[ind1, ind2]):
-            KnownU2,YP2 = OptYPUpdate(KnownU2, YP2, n, ind1, ind2, UnknownU2[ind1, ind2],k)
-            YP2Pes = PesYPUpdate(KnownU2, YP2Pes, n, ind1, ind2, k)
-
-        #Update samples for other components
-        One = KnownU1[ind1, other2] - KnownU1[0, other2]
-        Two = KnownU2[other1, ind2] - KnownU2[other1, 0]
-
-        Sum1[ind1] += One + 0.5
-        Sum2[ind2] += Two + 0.5
-
-        # Update sample counter for each difference value
-        N1[ind1] += 1
-        N2[ind2] += 1
+            matrices = sample(other1, ind2, matrices, n, k)
 
         #Update time index
         t += 1
 
         #Max Index Potential Value
-        #Vs.append(game[ind1, ind2])
-        Vs.append(UnknownYP[ind1,ind2])
-
-        Ps.append(YP[ind1, ind2])
+        Vs.append(game[ind1, ind2])
 
         #Append gap
         Gaps.append(PesGap)
@@ -433,24 +354,13 @@ def main(**kwargs):
             Nash.append(MinPotential)
 
         # Calculate the percentage of NaN values
-        Percent1.append((np.count_nonzero(np.isnan(KnownU1)) / KnownU1.size) * 100)
-        Percent2.append((np.count_nonzero(np.isnan(KnownU2)) / KnownU2.size) * 100)
-
-
-    diff = OptYPInitCalc_old(KnownU1, n,k) - UnknownYP
-    print((np.count_nonzero(np.isnan(KnownU1))))
-    print(np.sum(np.abs(np.matmul(Phi, np.matmul(KnownU1, Phi)) - UnknownYP)))
-    print(np.sum(np.abs(diff)))
-    print(np.sum(np.abs(YP-UnknownYP)))
-
-
+        Percent.append((np.count_nonzero(np.isnan(KnownU1)) / KnownU1.size) * 100)
 
     # create a figure and axis object
     fig, ax1 = plt.subplots()
     fig.set_figwidth(15)
     # plot the first array using the left y-axis
     ax1.plot(Vs, color='red')
-    #ax1.plot(Ps, color='green')
     ax1.set_xlabel('Iterations')
     ax1.set_ylabel('True YP Value of Optimistic YP Estimate Maximum', color='red')
     ax1.axhline(y=np.max(UnknownYP), color='r', linestyle='--')
@@ -462,9 +372,8 @@ def main(**kwargs):
     ax2 = ax1.twinx()
 
     # plot the second array using the right y-axis
-    ax2.plot(Percent1, color='blue',label = 'Percent of U1 Values Sampled')
-    #ax2.plot(Percent2, color='green',label = 'Percent of U2 Values Sampled')
-    ax2.set_ylabel('% of U1 Matrix Sampled', color='blue')
+    ax2.plot(Percent, color='blue',label = 'Percent of Utility Values Sampled')
+    ax2.set_ylabel('% of U Matrix Sampled', color='blue')
     ax2.set_ylim([0,100])
 
     # create a twin axis object on the right side
