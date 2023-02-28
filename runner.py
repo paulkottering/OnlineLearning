@@ -23,7 +23,7 @@ def OptPesYPInitCalc(KnownU, n, k):
     """
     OptYP = np.ones((n, n)) *( ((n - 1) ** 2 / (n ** 2)) * k + ((n-1)**2) / (n ** 2) * k + (2*n-1)*((-n + 1) / (n ** 2)) * (0.5-k))
 
-    PesYP = np.ones((n, n)) *( ((n - 1) ** 2 / (n ** 2)) * (0.5-k) + ((n-1)**2) / (n ** 2) * (0.5-k) + (2*n-1)*((-n + 1) / (n ** 2)) * k)
+    PesYP = np.ones((n, n)) *( ((n - 1) ** 2 / (n ** 2)) * (0.5-k) + ((n-1)**2) / (n ** 2) * (0.5-k) + (2*n-2)*((-n + 1) / (n ** 2)) * k)
 
     # a = 0
     # for b in range(n):
@@ -103,30 +103,28 @@ def OptPesY1Update(OptY1,PesY1, a, b, Val,n,k):
 
     # Update the Y1 matrix using the new sample
     for i in range(n):
-        for j in range(n):
-            if i == a:
-                OptY1[i, j] += (n - 1) / (n ** 2)(Val - k)
-                PesY1[i, j] += (n - 1) / (n ** 2)(Val - (0.5-k))
-            else:
-                OptY1[i, j] += (- 1) / (n ** 2)(Val - (0.5-k))
-                PesY1[i, j] += (- 1) / (n ** 2)(Val - k)
+        if i == a:
+            OptY1[i] += (n - 1) / (n ** 2)*(Val - k)
+            PesY1[i] += (n - 1) / (n ** 2)*(Val - (0.5-k))
+        else:
+            OptY1[i] += (- 1) / (n ** 2)*(Val - (0.5-k))
+            PesY1[i] += (- 1) / (n ** 2)*(Val - k)
     return OptY1,PesY1
 
 def OptPesY2Update(OptY2,PesY2, a, b, Val,n,k):
     # Update the Y2 matrix using the new sample
-    for i in range(n):
-        for j in range(n):
-            if j == b:
-                OptY2[i, j] += (n - 1) / (n ** 2)(Val - k)
-                PesY2[i, j] += (n - 1) / (n ** 2)(Val - (0.5-k))
-            else:
-                OptY2[i, j] += (- 1) / (n ** 2)(Val - (0.5-k))
-                PesY2[i, j] += (- 1) / (n ** 2)(Val - k)
+    for j in range(n):
+        if j == b:
+            OptY2[j] += (n - 1) / (n ** 2)*(Val - k)
+            PesY2[j] += (n - 1) / (n ** 2)*(Val - (0.5-k))
+        else:
+            OptY2[j] += (- 1) / (n ** 2)*(Val - (0.5-k))
+            PesY2[j] += (- 1) / (n ** 2)*(Val - k)
     return OptY2,PesY2
 
 def FindNash(game):
-    one_max_indices = np.argmax(game, axis=0)
-    two_max_indices = np.argmax(game, axis=1)
+    one_max_indices = np.argmax(game, axis=1)
+    two_max_indices = np.argmax(game, axis=0)
 
     NashIndices = []
 
@@ -165,30 +163,31 @@ def sample(i,j,matrices, n, k):
     PesY1 = matrices[10]
     PesY2 = matrices[11]
 
-    # Sample UnknownU1 and Unknown U2
-    U1Val = UnknownU1[i, j]
-    U2Val = UnknownU2[i, j]
+    if np.isnan(matrices[2][i,j]):
+        # Sample UnknownU1 and Unknown U2
+        U1Val = UnknownU1[i, j]
+        U2Val = UnknownU2[i, j]
 
-    # Update KnownU1 and KnownU2
-    KnownU1[i, j] = U1Val
-    KnownU2[i, j] = U2Val
+        # Update KnownU1 and KnownU2
+        KnownU1[i, j] = U1Val
+        KnownU2[i, j] = U2Val
 
-    # Update OptU1, PesU1, OptU2, PesU2
+        # Update OptU1, PesU1, OptU2, PesU2
 
-    # Update OptY1,PesY1
-    OptY1,PesY1 = OptPesY1Update(OptY1,PesY1, i, j, U1Val, n, k)
+        # Update OptY1,PesY1
+        OptY1,PesY1 = OptPesY1Update(OptY1,PesY1, i, j, U1Val, n, k)
 
-    # Update OptY2,PesY2
-    OptY2,PesY2 = OptPesY2Update(OptY2,PesY2, i, j, U2Val, n, k)
+        # Update OptY2,PesY2
+        OptY2,PesY2 = OptPesY2Update(OptY2,PesY2, i, j, U2Val, n, k)
 
-    # Update OptYP1,PesYP1
-    OptYP1,PesYP1 = OptPesY1Update(OptYP1,PesYP1, i, j, U1Val, n, k)
+        # Update OptYP1,PesYP1
+        OptYP1,PesYP1 = OptPesYPUpdate(OptYP1,PesYP1, i, j, U1Val, n, k)
 
-    # Update OptYP2,PesYP2
-    OptYP2,PesYP2 = OptPesYPUpdate(OptYP2,PesYP2, i, j, U2Val, n, k)
+        # Update OptYP2,PesYP2
+        OptYP2,PesYP2 = OptPesYPUpdate(OptYP2,PesYP2, i, j, U2Val, n, k)
 
-    #Update Potential Bounds
-    matrices = [UnknownU1, UnknownU2, KnownU1, KnownU2, OptYP1, OptYP2, PesYP1, PesYP2, OptY1, OptY2, PesY1, PesY2]
+        #Update Potential Bounds
+        matrices = [UnknownU1, UnknownU2, KnownU1, KnownU2, OptYP1, OptYP2, PesYP1, PesYP2, OptY1, OptY2, PesY1, PesY2]
 
     return matrices
 
@@ -204,7 +203,7 @@ def main(**kwargs):
     MaxPotential = np.max(game)
     MinPotential = np.min(game)
 
-    NashIndices = (FindNash(game))
+    NashIndices = FindNash(game)
 
     # Find max indices
     # Vmax1, Vmax2 = np.unravel_index(np.argmax(game, axis=None), game.shape)
@@ -228,9 +227,10 @@ def main(**kwargs):
     Phi = np.eye(n) - 1 / n * np.ones((n, n))
     Xi = 1 / n * np.ones((n, n))
 
-    UnknownY1 = np.matmul(Phi, np.matmul(UnknownU1, Xi))[:, 0]
-    UnknownY2 = np.matmul(Xi, np.matmul(UnknownU2, Phi))[0, :]
+    UnknownY1 = np.matmul(Phi, np.matmul(UnknownU1, Xi))
+    UnknownY2 = np.matmul(Xi, np.matmul(UnknownU2, Phi))
     UnknownYP = np.matmul(Phi, np.matmul(UnknownU1, Phi))
+    UnknownGame = UnknownYP + UnknownY1 + UnknownY2
 
     # Prepare arrays for known samples
     KnownU2 = np.full((n, n), np.nan)
@@ -249,7 +249,7 @@ def main(**kwargs):
     OptYP2,PesYP2 = OptPesYPInitCalc(KnownU2, n,k)
 
     OptY1,PesY1 = OptPesY1InitCalc(KnownU2, n,k)
-    OptY2,PesY2 = OptPesY2Update(KnownU2, n,k)
+    OptY2,PesY2 = OptPesY2InitCalc(KnownU2, n,k)
 
 
     ## Loop Until we reach convergence
@@ -265,26 +265,14 @@ def main(**kwargs):
     for i in range(n):
         matrices = sample(i, i, matrices, n, k)
 
+    FullDiff = np.abs(UnknownGame - OptYP1 - np.array([OptY1] * n).T - np.array([OptY2] * n))
 
-    while t < t_max:
+    while t<t_max:
 
-        KnownU1 = matrices[2]
-        KnownU2 = matrices[3]
+        UnknownU1, UnknownU2, KnownU1, KnownU2, OptYP1, OptYP2, PesYP1, PesYP2, OptY1, OptY2, PesY1, PesY2 = matrices
 
-        OptYP1 = matrices[4]
-        OptYP2 = matrices[5]
-
-        PesYP1 = matrices[6]
-        PesYP2 = matrices[7]
-
-        OptY1 = matrices[8]
-        OptY2 = matrices[9]
-
-        PesY1 = matrices[10]
-        PesY2 = matrices[11]
-
-        OptYP = np.minimum(OptYP1, OptYP2)
-        PesYP = np.maximum(PesYP1, PesYP2)
+        OptYP = OptYP1
+        PesYP = PesYP1
 
         # Optimistic potential matrix estimate
         OptPhi = OptYP + np.array([OptY1] * n).T + np.array([OptY2] * n)
@@ -295,54 +283,10 @@ def main(**kwargs):
         # Find maximum of potential matrix estimate
         ind1, ind2 = np.unravel_index(np.argmax(OptPhi, axis=None),OptPhi.shape)
 
-        nan_new_act = []
-        new_act = []
-        indices = []
-        for index in np.ndindex(game.shape):
-            indices.append(list(index))
-
-        for ind in indices:
-            if OptPhi[ind[0],ind[1]] >= np.max(PesPhi):
-                if np.isnan(KnownU1[ind[0],ind[1]]):
-                    nan_new_act.append(ind)
-                new_act.append(ind)
-
-        if len(new_act) == 1:
-            break
-
-        if np.isnan(KnownU1[ind1, ind2]):
-            matrices = sample(ind1, ind2, matrices, n, k)
-
-        if len(nan_new_act) >= 1:
-            nan_active_indices = np.array(nan_new_act)
-            rand_active_ind = np.random.choice(range(len(nan_active_indices)), size=1, replace=False)
-
-            rand_active_ind1 = nan_active_indices[rand_active_ind][0][0]
-            rand_active_ind2 = nan_active_indices[rand_active_ind][0][1]
-
-            matrices = sample(rand_active_ind1, rand_active_ind2, matrices, n, k)
-
-        else:
-            rand_ind1 = np.argwhere(np.isnan(KnownU1))[0][0]
-            rand_ind2 = np.argwhere(np.isnan(KnownU1))[0][1]
-            matrices = sample(rand_ind1, rand_ind2, matrices, n, k)
-
-        PesGap = np.count_nonzero(CurrentPotentialEstimate < np.max(PessimisticPotentialEstimate))/(n**2) * 100
-
-        #Sample new estimates
-        if np.any(np.isnan(KnownU1[ind1,:])):
-            other2 = np.nanargmin(KnownU1[ind1,:])
-            matrices = sample(ind1, other2, matrices, n, k)
-
-        if np.any(np.isnan(KnownU2[:, ind2])):
-            other1 = np.nanargmin(KnownU2[:, ind2])
-            matrices = sample(other1, ind2, matrices, n, k)
-
-        #Update time index
-        t += 1
-
         #Max Index Potential Value
-        Vs.append(game[ind1, ind2])
+        Vs.append(UnknownGame[ind1, ind2])
+
+        PesGap = np.count_nonzero(OptPhi < np.max(PesPhi)) / (n ** 2) * 100
 
         #Append gap
         Gaps.append(PesGap)
@@ -356,6 +300,50 @@ def main(**kwargs):
         # Calculate the percentage of NaN values
         Percent.append((np.count_nonzero(np.isnan(KnownU1)) / KnownU1.size) * 100)
 
+        nan_new_act = []
+        new_act = []
+        indices = []
+        for index in np.ndindex(game.shape):
+            indices.append(list(index))
+
+        for ind in indices:
+            if OptPhi[ind[0],ind[1]] >= np.max(PesPhi):
+                if np.isnan(matrices[2][ind[0],ind[1]]):
+                    nan_new_act.append(ind)
+                new_act.append(ind)
+
+        if len(new_act) == 0:
+            break
+
+        if np.isnan(matrices[2][ind1, ind2]):
+            matrices = sample(ind1, ind2, matrices, n, k)
+
+        if len(nan_new_act) > 1:
+            nan_active_indices = np.array(nan_new_act)
+            rand_active_ind = np.random.choice(range(len(nan_active_indices)), size=1, replace=False)
+
+            rand_active_ind1 = nan_active_indices[rand_active_ind][0][0]
+            rand_active_ind2 = nan_active_indices[rand_active_ind][0][1]
+
+            matrices = sample(rand_active_ind1, rand_active_ind2, matrices, n, k)
+
+        if np.any(np.isnan(matrices[2])):
+            rand_ind1 = np.argwhere(np.isnan(matrices[2]))[0][0]
+            rand_ind2 = np.argwhere(np.isnan(matrices[2]))[0][1]
+            matrices = sample(rand_ind1, rand_ind2, matrices, n, k)
+
+        if np.any(np.isnan(matrices[2][ind1,:])):
+            other2 = np.where(np.isnan(matrices[2][ind1,:]))[0][0]
+            matrices = sample(ind1, other2, matrices, n, k)
+
+        if np.any(np.isnan(matrices[2][:, ind2])):
+            index = np.where(np.isnan(matrices[2][:, ind2]))[0]
+            other1 = np.where(np.isnan(matrices[2][:, ind2]))[0][0]
+            matrices = sample(other1, ind2, matrices, n, k)
+
+        #Update time index
+        t += 1
+
     # create a figure and axis object
     fig, ax1 = plt.subplots()
     fig.set_figwidth(15)
@@ -363,10 +351,9 @@ def main(**kwargs):
     ax1.plot(Vs, color='red')
     ax1.set_xlabel('Iterations')
     ax1.set_ylabel('True YP Value of Optimistic YP Estimate Maximum', color='red')
-    ax1.axhline(y=np.max(UnknownYP), color='r', linestyle='--')
-    #ax1.axhline(y=np.max(game), color='r', linestyle='--')
+    ax1.axhline(y=np.max(UnknownGame), color='r', linestyle='--')
 
-    ax1.fill_between(range(t_max-1), Nash, where=(np.array(Nash) > np.min(game)), alpha=0.5, color='green')
+    ax1.plot(range(len(Nash)), Nash, color='green')
 
     # create a twin axis object on the right side
     ax2 = ax1.twinx()
