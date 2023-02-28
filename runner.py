@@ -70,15 +70,6 @@ def OptPesY2InitCalc(KnownU, n, k):
     return OptY2, PesY2
 
 def OptPesYPUpdate(OptYP,PesYP, a, b, Val,n,k):
-    """
-    Update the YP matrix based on a new sample in the utility matrix
-
-    Arguments:
-
-
-    Returns:
-    YP -- the updated YP matrix
-    """
 
     # Update the YP matrix using the new sample
     for i in range(n):
@@ -136,15 +127,80 @@ def FindNash(game):
 
     return NashIndices
 
-def sample(i,j,matrices, n, k):
-    """
-    Performs a sample of the UnknownU1 and updates all the relevant matrices.
-    The joint strategy provided must not have been sample before.
-    :param i: Strategy of Player 1
-    :param j: Strategy of Player 2
-    :matrices: List of matrices
-    :return: Updated Matrices
-    """
+def OptPesYPRecalc(OptU,PesU, n):
+
+    OptYP = np.ones((n, n))
+    PesYP = np.ones((n, n))
+
+    OptMat = OptU
+    ColSumOpt = np.matmul(np.ones(n),OptU)
+    RowSumOpt = np.matmul(OptU,np.ones(n).T)
+    OptSum = np.sum(OptU)
+
+    PesMat =  PesU
+    ColSumPes = np.matmul(np.ones(n), PesU)
+    RowSumPes = np.matmul(PesU, np.ones(n).T)
+    PesSum = np.sum(PesU)
+
+    for i in range(n):
+        for j in range(n):
+            OtherOpt = (1)/(n**2)*(OptSum - ColSumOpt[j] - RowSumOpt[i] + OptMat[i,j])
+            OtherPes = (1) / (n ** 2) * (PesSum - ColSumPes[j] - RowSumPes[i] + PesMat[i, j])
+
+            OptYP[i,j] = ((n-1)**2)/(n**2)*OptMat[i,j] -(n-1)/(n**2)*(ColSumPes[j] - PesMat[i,j])  -(n-1)/(n**2)*(RowSumPes[i]- PesMat[i,j]) + OtherOpt
+            PesYP[i, j] = ((n-1)**2)/(n**2)*PesMat[i, j] -(n-1)/(n**2)*(ColSumOpt[j] - OptMat[i,j]) -(n-1)/(n**2)*(RowSumOpt[i]- OptMat[i,j]) + OtherPes
+
+    return OptYP, PesYP
+def OptPesY1Recalc(OptU,PesU, n):
+
+    OptY1 = np.ones(n)
+    PesY1 = np.ones(n)
+
+    RowSumOpt = np.matmul(OptU,np.ones(n).T)
+    OptSum = np.sum(OptU)
+
+    RowSumPes = np.matmul(PesU, np.ones(n).T)
+    PesSum = np.sum(PesU)
+
+    for i in range(n):
+        OptY1[i] = (n-1)/(n**2)*RowSumOpt[i] - 1/(n**2) *(PesSum - RowSumPes[i])
+        PesY1[i] = (n-1)/(n**2)*RowSumPes[i] - 1/(n**2) *(OptSum - RowSumOpt[i])
+
+    return OptY1, PesY1
+def OptPesY2Recalc(OptU,PesU, n):
+
+    OptY2 = np.ones(n)
+    PesY2 = np.ones(n)
+
+    ColSumOpt = np.matmul(np.ones(n),OptU)
+    OptSum = np.sum(OptU)
+
+    ColSumPes = np.matmul(np.ones(n), PesU)
+    PesSum = np.sum(PesU)
+
+    for j in range(n):
+        OptY2[j] = (n-1)/(n**2)*ColSumOpt[j] - 1/(n**2) *(PesSum - ColSumPes[j])
+        PesY2[j] = (n-1)/(n**2)*ColSumPes[j] - 1/(n**2) *(OptSum - ColSumOpt[j])
+
+    return OptY2, PesY2
+def OptPesU2Update(OptU2,PesU2,a,b, n, PhiRange):
+
+    for j in range(n):
+        if j != b:
+            OptU2[a, j] = np.minimum(OptU2[a, j], OptU2[a, b] + PhiRange)
+            PesU2[a, j] = np.maximum(PesU2[a, j], PesU2[a, b] - PhiRange)
+
+    return OptU2, PesU2
+def OptPesU1Update(OptU1,PesU1,a,b, n, PhiRange):
+
+    for i in range(n):
+        if i != a:
+            OptU1[i, b] = np.minimum(OptU1[i, b], OptU1[a, b] + PhiRange)
+            PesU1[i, b] = np.maximum(PesU1[i, b], PesU1[a, b] - PhiRange)
+
+    return OptU1,PesU1
+def sample(i,j,matrices, n,k,PhiRange):
+
     UnknownU1 = matrices[0]
     UnknownU2 = matrices[1]
 
@@ -163,6 +219,12 @@ def sample(i,j,matrices, n, k):
     PesY1 = matrices[10]
     PesY2 = matrices[11]
 
+    OptU1 = matrices[12]
+    PesU1 = matrices[13]
+
+    OptU2 = matrices[14]
+    PesU2 = matrices[15]
+
     if np.isnan(matrices[2][i,j]):
         # Sample UnknownU1 and Unknown U2
         U1Val = UnknownU1[i, j]
@@ -172,22 +234,29 @@ def sample(i,j,matrices, n, k):
         KnownU1[i, j] = U1Val
         KnownU2[i, j] = U2Val
 
+        # Update Samples in OptU1, PesU1, OptU2, PesU2
+        OptU1[i, j] = U1Val
+        PesU1[i, j] = U1Val
+
+        OptU2[i, j] = U2Val
+        PesU2[i, j] = U2Val
+
         # Update OptU1, PesU1, OptU2, PesU2
+        OptU1, PesU1 = OptPesU1Update(OptU1, PesU1, i, j, n, PhiRange)
+        OptU2, PesU2 = OptPesU2Update(OptU2, PesU2, i, j, n, PhiRange)
 
         # Update OptY1,PesY1
-        OptY1,PesY1 = OptPesY1Update(OptY1,PesY1, i, j, U1Val, n, k)
+        OptY1, PesY1 = OptPesY1Recalc(OptU1, PesU1, n)
+        OptY2, PesY2 = OptPesY2Recalc(OptU2, PesU2, n)
 
-        # Update OptY2,PesY2
-        OptY2,PesY2 = OptPesY2Update(OptY2,PesY2, i, j, U2Val, n, k)
-
-        # Update OptYP1,PesYP1
-        OptYP1,PesYP1 = OptPesYPUpdate(OptYP1,PesYP1, i, j, U1Val, n, k)
+        # Recalculate OptYP1,PesYP1
+        OptYP1,PesYP1 = OptPesYPRecalc(OptU1, PesU1, n)
 
         # Update OptYP2,PesYP2
-        OptYP2,PesYP2 = OptPesYPUpdate(OptYP2,PesYP2, i, j, U2Val, n, k)
+        OptYP2,PesYP2 = OptPesYPRecalc(OptU2, PesU2, n)
 
         #Update Potential Bounds
-        matrices = [UnknownU1, UnknownU2, KnownU1, KnownU2, OptYP1, OptYP2, PesYP1, PesYP2, OptY1, OptY2, PesY1, PesY2]
+        matrices = [UnknownU1, UnknownU2, KnownU1, KnownU2, OptYP1, OptYP2, PesYP1, PesYP2, OptY1, OptY2, PesY1, PesY2,OptU1,PesU1,OptU2,PesU2]
 
     return matrices
 
@@ -232,6 +301,8 @@ def main(**kwargs):
     UnknownYP = np.matmul(Phi, np.matmul(UnknownU1, Phi))
     UnknownGame = UnknownYP + UnknownY1 + UnknownY2
 
+    PhiRange = np.max(UnknownGame) - np.min(UnknownGame)
+
     # Prepare arrays for known samples
     KnownU2 = np.full((n, n), np.nan)
     KnownU1 = np.full((n, n), np.nan)
@@ -251,6 +322,10 @@ def main(**kwargs):
     OptY1,PesY1 = OptPesY1InitCalc(KnownU2, n,k)
     OptY2,PesY2 = OptPesY2InitCalc(KnownU2, n,k)
 
+    OptU1 = np.ones((n,n)) * 0.5
+    PesU1 = np.ones((n, n)) * 0
+    OptU2 = np.ones((n, n)) * 0.5
+    PesU2 = np.ones((n, n)) * 0
 
     ## Loop Until we reach convergence
 
@@ -260,19 +335,19 @@ def main(**kwargs):
     for index in np.ndindex(game.shape):
         active_indices.append(list(index))
 
+    matrices = [UnknownU1, UnknownU2, KnownU1, KnownU2, OptYP1, OptYP2, PesYP1, PesYP2, OptY1, OptY2, PesY1, PesY2,OptU1,PesU1,OptU2,PesU2]
 
-    matrices = [UnknownU1, UnknownU2, KnownU1, KnownU2, OptYP1, OptYP2, PesYP1, PesYP2, OptY1, OptY2, PesY1, PesY2]
     for i in range(n):
-        matrices = sample(i, i, matrices, n, k)
+        matrices = sample(i, i, matrices, n, k,PhiRange)
 
     FullDiff = np.abs(UnknownGame - OptYP1 - np.array([OptY1] * n).T - np.array([OptY2] * n))
 
     while t<t_max:
 
-        UnknownU1, UnknownU2, KnownU1, KnownU2, OptYP1, OptYP2, PesYP1, PesYP2, OptY1, OptY2, PesY1, PesY2 = matrices
+        UnknownU1, UnknownU2, KnownU1, KnownU2, OptYP1, OptYP2, PesYP1, PesYP2, OptY1, OptY2, PesY1,PesY2,OptU1,PesU1,OptU2,PesU2 = matrices
 
-        OptYP = OptYP1
-        PesYP = PesYP1
+        OptYP = np.minimum(OptYP1,OptYP2)
+        PesYP = np.minimum(PesYP1,PesYP2)
 
         # Optimistic potential matrix estimate
         OptPhi = OptYP + np.array([OptY1] * n).T + np.array([OptY2] * n)
@@ -312,11 +387,11 @@ def main(**kwargs):
                     nan_new_act.append(ind)
                 new_act.append(ind)
 
-        if len(new_act) == 0:
+        if len(new_act) == 1:
             break
 
         if np.isnan(matrices[2][ind1, ind2]):
-            matrices = sample(ind1, ind2, matrices, n, k)
+            matrices = sample(ind1, ind2, matrices, n, k,PhiRange)
 
         if len(nan_new_act) > 1:
             nan_active_indices = np.array(nan_new_act)
@@ -325,24 +400,24 @@ def main(**kwargs):
             rand_active_ind1 = nan_active_indices[rand_active_ind][0][0]
             rand_active_ind2 = nan_active_indices[rand_active_ind][0][1]
 
-            matrices = sample(rand_active_ind1, rand_active_ind2, matrices, n, k)
-
-        if np.any(np.isnan(matrices[2])):
+            matrices = sample(rand_active_ind1, rand_active_ind2, matrices, n, k,PhiRange)
+        elif np.any(np.isnan(matrices[2])):
             rand_ind1 = np.argwhere(np.isnan(matrices[2]))[0][0]
             rand_ind2 = np.argwhere(np.isnan(matrices[2]))[0][1]
-            matrices = sample(rand_ind1, rand_ind2, matrices, n, k)
+            matrices = sample(rand_ind1, rand_ind2, matrices, n, k,PhiRange)
 
-        if np.any(np.isnan(matrices[2][ind1,:])):
-            other2 = np.where(np.isnan(matrices[2][ind1,:]))[0][0]
-            matrices = sample(ind1, other2, matrices, n, k)
-
-        if np.any(np.isnan(matrices[2][:, ind2])):
-            index = np.where(np.isnan(matrices[2][:, ind2]))[0]
-            other1 = np.where(np.isnan(matrices[2][:, ind2]))[0][0]
-            matrices = sample(other1, ind2, matrices, n, k)
+        # if np.any(np.isnan(matrices[2][ind1,:])):
+        #     other2 = np.where(np.isnan(matrices[2][ind1,:]))[0][0]
+        #     matrices = sample(ind1, other2, matrices, n, k,PhiRange)
+        #
+        # if np.any(np.isnan(matrices[2][:, ind2])):
+        #     other1 = np.where(np.isnan(matrices[2][:, ind2]))[0][0]
+        #     matrices = sample(other1, ind2, matrices, n, k,PhiRange)
 
         #Update time index
         t += 1
+
+    print(np.sum(np.abs(UnknownGame - OptPhi)))
 
     # create a figure and axis object
     fig, ax1 = plt.subplots()
