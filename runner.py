@@ -313,6 +313,7 @@ def main(**kwargs):
     Percent = []
     Nash = []
     Gaps = []
+    PercentBoundedPhi = []
 
     k = kwargs.get("optimismconstant")
 
@@ -373,7 +374,9 @@ def main(**kwargs):
             Nash.append(MinPotential)
 
         # Calculate the percentage of NaN values
-        Percent.append((np.count_nonzero(np.isnan(KnownU1)) / KnownU1.size) * 100)
+        Percent.append(100-(np.count_nonzero(np.isnan(KnownU1)) / KnownU1.size) * 100)
+
+        PercentBoundedPhi.append(np.count_nonzero(OptPhi < np.max(UnknownGame)) / (n ** 2) * 100)
 
         nan_new_act = []
         new_act = []
@@ -425,26 +428,34 @@ def main(**kwargs):
     # plot the first array using the left y-axis
     ax1.plot(Vs, color='red')
     ax1.set_xlabel('Iterations')
-    ax1.set_ylabel('True YP Value of Optimistic YP Estimate Maximum', color='red')
+    ax1.set_ylabel('True Potential Value of Optimistic Potential Estimate Maximum', color='red')
     ax1.axhline(y=np.max(UnknownGame), color='r', linestyle='--')
-
-    ax1.plot(range(len(Nash)), Nash, color='green')
+    ax1.set_ylim([np.min(UnknownGame), np.max(UnknownGame)+0.01])
 
     # create a twin axis object on the right side
     ax2 = ax1.twinx()
 
     # plot the second array using the right y-axis
     ax2.plot(Percent, color='blue',label = 'Percent of Utility Values Sampled')
-    ax2.set_ylabel('% of U Matrix Sampled', color='blue')
     ax2.set_ylim([0,100])
-
-    # create a twin axis object on the right side
-    ax3 = ax1.twinx()
-
+    ax2.fill_between(range(len(Nash)), -5, 5, where=Nash > np.zeros(len(Nash)), color='green', alpha=0.5)
     # plot the second array using the right y-axis
-    ax3.plot(Gaps, color='orange', label='Gap')
-    ax3.set_ylabel('% of YP Optimistic Estimates less than Pessimistic YP Maximum', color='orange')
-    ax3.spines.right.set_position(("axes", 1.05))
+    ax2.plot(Gaps, color='orange', label='Percentage of Strategy Profiles "Non-Active"')
+    ax2.plot(PercentBoundedPhi, color='purple', label='Percentage of Optimistic Phi < Phi_max')
+    ax2.set_ylabel('%')
+    ax2.spines.right.set_position(("axes", 1.05))
+
+    box = ax2.get_position()
+    ax2.set_position([box.x0, box.y0 + box.height * 0.1,
+                     box.width, box.height * 0.9])
+
+    box = ax1.get_position()
+    ax1.set_position([box.x0, box.y0 + box.height * 0.1,
+                     box.width, box.height * 0.9])
+
+    # Put a legend below current axis
+    ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.07),
+              fancybox=True, shadow=True, ncol=5)
 
     # set the title of the plot
     plt.savefig("Figures/Test")
