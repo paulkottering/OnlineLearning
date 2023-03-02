@@ -207,7 +207,6 @@ def sample(i,j,matrices, n,PhiMax,PhiMin,UnknownGame):
         matrices = [UnknownU1, UnknownU2, KnownU1, KnownU2, OptPhi, PesPhi, OptU1, PesU1, OptU2, PesU2]
 
     return matrices
-
 def strategy(KnownU1,OptPhi,PesPhi,n,stratnum):
     nan_new_act = []
     new_act = []
@@ -305,16 +304,9 @@ def strategy(KnownU1,OptPhi,PesPhi,n,stratnum):
             rand_ind1 = np.argwhere(np.isnan(KnownU1))[0][0]
             rand_ind2 = np.argwhere(np.isnan(KnownU1))[0][1]
             return rand_ind1, rand_ind2
-
-def main(**kwargs):
-
-    # Dimension of Problem
-    n = kwargs.get("dimension")
-
-    s = kwargs.get("strategy")
+def setup(n):
 
     game = rand.randint(-12500, 12501, (n, n)) / 100000
-
 
     MaxPotential = np.max(game)
     MinPotential = np.min(game)
@@ -348,14 +340,6 @@ def main(**kwargs):
     KnownU2 = np.full((n, n), np.nan)
     KnownU1 = np.full((n, n), np.nan)
 
-    t = 1
-
-    Vs = []
-    Percent = []
-    Nash = []
-    Gaps = []
-    PercentBoundedPhi = []
-
     OptPhi = np.ones((n,n))*(PhiMax+2)
     PesPhi = np.ones((n,n))*(PhiMin-2)
 
@@ -364,16 +348,35 @@ def main(**kwargs):
     OptU2 = np.ones((n, n)) * 0.5
     PesU2 = np.ones((n, n)) * 0
 
+
+    return [UnknownU1, UnknownU2, KnownU1, KnownU2, OptPhi, PesPhi ,OptU1,PesU1,OptU2,PesU2],UnknownGame, PhiMax, PhiMin
+def init_strat(matrices, n, PhiMax, PhiMin, UnknownGame):
+
+    matrices = sample(0, 0, matrices, n, PhiMax, PhiMin, UnknownGame)
+
+    return matrices
+def main(**kwargs):
+
+    # Dimension of Problem
+    n = kwargs.get("dimension")
+
+    s = kwargs.get("strategy")
+
     t_max = kwargs.get("timesteps")
 
-    active_indices = []
-    for index in np.ndindex(game.shape):
-        active_indices.append(list(index))
+    t = 1
 
-    matrices = [UnknownU1, UnknownU2, KnownU1, KnownU2, OptPhi, PesPhi ,OptU1,PesU1,OptU2,PesU2]
+    Vs = []
+    Percent = []
+    Nash = []
+    Gaps = []
+    PercentBoundedPhi = []
 
-    for i in range(n):
-        matrices = sample(i, i, matrices, n, PhiMax,PhiMin,UnknownGame)
+    matrices, UnknownGame, PhiMax, PhiMin = setup(n)
+
+    NashIndices = FindNash(UnknownGame)
+
+    matrices = init_strat(matrices, n, PhiMax, PhiMin, UnknownGame)
 
     UnknownU1, UnknownU2, KnownU1, KnownU2, OptPhi, PesPhi, OptU1, PesU1, OptU2, PesU2 = matrices
 
@@ -386,9 +389,9 @@ def main(**kwargs):
         Gaps.append(np.count_nonzero(matrices[4] < np.max(matrices[5])) / (n ** 2) * 100)
 
         if [ind1,ind2] in NashIndices:
-            Nash.append(MaxPotential)
+            Nash.append(1)
         else:
-            Nash.append(MinPotential)
+            Nash.append(0)
 
         Percent.append(100-(np.count_nonzero(np.isnan(matrices[2])) / matrices[2].size) * 100)
 
