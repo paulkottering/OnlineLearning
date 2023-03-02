@@ -1,11 +1,11 @@
 import argparse
 import numpy as np
-from numpy import random as rand
 import matplotlib.pyplot as plt
 from game import game
 
 from utils.Nash import FindNash
-from selection_strategy import select_index
+from utils.sample_strategy import sample_index
+from utils.selection_strategy import select_index
 
 def parse_args():
     """
@@ -15,9 +15,12 @@ def parse_args():
     # Set up arguments
     parser.add_argument("-n", "--dimension", default=5, type=int,
                         help = 'Number of Strategies for each player')
-    parser.add_argument("-s", "--strategy", default="or", type=str,
-                        help = 'Sample selection strategy',
-                        choices=["d", "ra", "nr", "r","or"],)
+    parser.add_argument("-sa", "--sample_strategy", default="or", type=str,
+                        help = 'sample_strategy',
+                        choices=["d", "ra", "nr", "r","or","lr"],)
+    parser.add_argument("-se", "--selection_strategy", default="or", type=str,
+                        help = 'Selection strategy',
+                        choices=["o","p"],)
     parser.add_argument("-t", "--timesteps", default=100, type=int,
                         help='Number of timesteps')
     parser.add_argument("-k", "--optimismconstant", default=0.5, type=float,
@@ -28,7 +31,8 @@ def main(**kwargs):
 
     # Dimension of Problem
     n = kwargs.get("dimension")
-    s = kwargs.get("strategy")
+    sa = kwargs.get("sample_strategy")
+    se = kwargs.get("selection_strategy")
     t_max = kwargs.get("timesteps")
 
     t = 1
@@ -46,8 +50,10 @@ def main(**kwargs):
 
     while t<t_max:
 
-        ind1, ind2 = np.unravel_index(np.argmax(Game.OptPhi, axis=None),(n,n))
+        ind1, ind2 = select_index(Game,se)
+
         Vs.append(Game.UnknownGame[ind1, ind2])
+
         Gaps.append(np.count_nonzero(Game.OptPhi < np.max(Game.PesPhi)) / (n ** 2) * 100)
 
         if [ind1,ind2] in NashIndices:
@@ -61,7 +67,7 @@ def main(**kwargs):
         if not np.any(np.isnan(Game.KnownU1)):
             break
 
-        i,j = select_index(Game,s)
+        i,j = sample_index(Game,sa)
         Game.sample(i,j)
         Game.check_bounds()
 

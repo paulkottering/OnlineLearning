@@ -83,10 +83,14 @@ class game():
             OptY2, PesY2 = OptPesY2Recalc(self.OptU2,self.PesU2,self.n)
 
             # Recalculate OptYP1,PesYP1
-            OptYP1, OptYP2 = OptPesYPRecalc(self.OptU1,self.PesU1,self.n)
+            OptYP1, PesYP1 = OptPesYPRecalc(self.OptU1,self.PesU1,self.n)
+
+            #OptYP1, OptYP2 = OptPesYPRecalc(self.OptU1, self.PesU1, self.n)
 
             # Update OptYP2,PesYP2
-            PesYP1, PesYP2 = OptPesYPRecalc(self.OptU2,self.PesU2,self.n)
+            OptYP2, PesYP2 = OptPesYPRecalc(self.OptU2,self.PesU2,self.n)
+
+            #PesYP1, PesYP2 = OptPesYPRecalc(self.OptU2, self.PesU2, self.n)
 
             OptYP = np.minimum(OptYP1, OptYP2)
             PesYP = np.minimum(PesYP1, PesYP2)

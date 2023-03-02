@@ -1,6 +1,6 @@
 import numpy as np
 
-def select_index(Game,i):
+def sample_index(Game,i):
     if i == "d":
         return descending_active(Game)
     if i == "ra":
@@ -10,6 +10,8 @@ def select_index(Game,i):
     if i == "r":
         return random_index(Game)
     if i == "or":
+        return opt_then_random(Game)
+    if i == "lr":
         return opt_then_random(Game)
 
 def descending_active(game):
@@ -27,7 +29,6 @@ def descending_active(game):
         rand_ind1 = np.argwhere(np.isnan(game.KnownU1))[0][0]
         rand_ind2 = np.argwhere(np.isnan(game.KnownU1))[0][1]
         return rand_ind1, rand_ind2
-
 def random_active(game):
 
     ind1, ind2 = np.unravel_index(np.argmax(game.OptPhi, axis=None), (game.n, game.n))
@@ -59,7 +60,6 @@ def random_active(game):
         rand_ind1 = np.argwhere(np.isnan(game.KnownU1))[0][0]
         rand_ind2 = np.argwhere(np.isnan(game.KnownU1))[0][1]
         return rand_ind1, rand_ind2
-
 def nearby_then_random(game):
 
     ind1, ind2 = np.unravel_index(np.argmax(game.OptPhi, axis=None), (game.n, game.n))
@@ -87,15 +87,23 @@ def nearby_then_random(game):
         rand_ind1 = np.argwhere(np.isnan(game.KnownU1))[0][0]
         rand_ind2 = np.argwhere(np.isnan(game.KnownU1))[0][1]
         return rand_ind1, rand_ind2
-
 def random_index(game):
     if np.any(np.isnan(game.KnownU1)):
         rand_ind1 = np.argwhere(np.isnan(game.KnownU1))[0][0]
         rand_ind2 = np.argwhere(np.isnan(game.KnownU1))[0][1]
         return rand_ind1, rand_ind2
-
 def opt_then_random(game):
     ind1, ind2 = np.unravel_index(np.argmax(game.OptPhi, axis=None), (game.n, game.n))
+
+    if np.isnan(game.KnownU1[ind1, ind2]):
+        return ind1, ind2
+
+    if np.any(np.isnan(game.KnownU1)):
+        rand_ind1 = np.argwhere(np.isnan(game.KnownU1))[0][0]
+        rand_ind2 = np.argwhere(np.isnan(game.KnownU1))[0][1]
+        return rand_ind1, rand_ind2
+def low_then_random(game):
+    ind1, ind2 = np.unravel_index(np.argmax(game.PesPhi, axis=None), (game.n, game.n))
 
     if np.isnan(game.KnownU1[ind1, ind2]):
         return ind1, ind2
