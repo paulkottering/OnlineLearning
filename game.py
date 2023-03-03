@@ -101,10 +101,6 @@ class game():
             # Pessimistic potential matrix estimate
             self.PesPhi = PesYP + np.array([PesY1] * self.n).T + np.array([PesY2] * self.n)
 
-    def initial_samples(self):
-        for i in range(self.n):
-            self.sample(i,i)
-
     def OptPesU2Update(self,a,b):
 
         for j in range(self.n):
