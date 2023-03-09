@@ -85,15 +85,11 @@ class game():
             # Recalculate OptYP1,PesYP1
             OptYP1, PesYP1 = OptPesYPRecalc(self.OptU1,self.PesU1,self.n)
 
-            #OptYP1, OptYP2 = OptPesYPRecalc(self.OptU1, self.PesU1, self.n)
-
             # Update OptYP2,PesYP2
             OptYP2, PesYP2 = OptPesYPRecalc(self.OptU2,self.PesU2,self.n)
 
-            #PesYP1, PesYP2 = OptPesYPRecalc(self.OptU2, self.PesU2, self.n)
-
-            OptYP = np.minimum(OptYP1, OptYP2)
-            PesYP = np.minimum(PesYP1, PesYP2)
+            OptYP = OptYP1
+            PesYP = PesYP1
 
             # Optimistic potential matrix estimate
             self.OptPhi = OptYP + np.array([OptY1] * self.n).T + np.array([OptY2] * self.n)
@@ -117,6 +113,7 @@ class game():
                 self.OptU2[a, j] = np.minimum(self.OptU2[a, j], self.OptU2[a, b] + OptRange)
                 self.PesU2[a, j] = np.maximum(self.PesU2[a, j], self.PesU2[a, b] + PesRange)
 
+
     def OptPesU1Update(self,a,b):
 
         for i in range(self.n):
@@ -127,8 +124,9 @@ class game():
                 OptRange = self.PhiMax - self.PhiMin
                 PesRange = - self.PhiMax + self.PhiMin
 
-                self.OptU1[i, b] = np.minimum(self.OptU1[i, b], self.OptU1[a, b] + OptRange)
-                self.PesU1[i, b] = np.maximum(self.PesU1[i, b], self.PesU1[a, b] + PesRange)
+                # self.OptU1[i, b] = np.minimum(self.OptU1[i, b], self.OptU1[a, b] + OptRange)
+                # self.PesU1[i, b] = np.maximum(self.PesU1[i, b], self.PesU1[a, b] + PesRange)
+
 
     def check_bounds(self):
 

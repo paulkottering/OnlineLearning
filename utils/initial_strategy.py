@@ -9,5 +9,5 @@ def initialize_game(Game,i):
             Game.sample(k, k)
 
     if i == "o":
-        Game.sample(rand.random(n), rand.random(n))
+        Game.sample(rand.randint(0,n), rand.randint(0,n))
 

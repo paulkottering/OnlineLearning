@@ -39,7 +39,7 @@ def plot_one(Game,Vs,Percent,Nash,Gaps,PercentBoundedPhi):
     # set the title of the plot
     plt.savefig("Figures/Test")
 
-def plot_many(kwargs, Regrets, Nash, Gaps, PercentBoundedPhi):
+def plot_many(kwargs, Regrets, Nash, Gaps, PercentBoundedPhi,percent_sampled):
 
     fig, ax1 = plt.subplots()
     fig.set_figwidth(15)
@@ -47,7 +47,6 @@ def plot_many(kwargs, Regrets, Nash, Gaps, PercentBoundedPhi):
     ax1.plot(np.mean(Regrets,axis=0), color='red')
     ax1.set_xlabel('Iterations')
     ax1.set_ylabel('Regret', color='red')
-    ax1.set_ylim([0, 0.5])
 
     # create a twin axis object on the right side
     ax2 = ax1.twinx()
@@ -58,7 +57,7 @@ def plot_many(kwargs, Regrets, Nash, Gaps, PercentBoundedPhi):
     # plot the second array using the right y-axis
     ax2.plot(np.mean(Nash,axis=0), color='green', label='Percentage of Strategy Profiles at Nash Eq')
     ax2.plot(np.mean(Gaps,axis=0), color='orange', label='Percentage of Strategy Profiles "Non-Active"')
-    ax2.plot(np.mean(PercentBoundedPhi,axis=0), color='purple', label='Percentage of Optimistic Phi < Phi_max')
+    ax2.plot(np.mean(percent_sampled,axis=0), color='purple', label='Percentage of Utility Matrix Sampled')
     ax2.set_ylabel('%')
     ax2.spines.right.set_position(("axes", 1.05))
 
