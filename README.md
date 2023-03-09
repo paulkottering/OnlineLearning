@@ -3,7 +3,6 @@
 How to run experiment:
 ````
 python multi_runner.py -n 20 -t 600 -sa pa -si d -r 1
-
 ````
 
 ## Variables / Arguments Explanation
