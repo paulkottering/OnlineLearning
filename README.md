@@ -1,4 +1,4 @@
-# 2Player
+# Optimistic Normal Form Solver
 
 How to run experiment:
 ````
