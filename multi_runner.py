@@ -29,9 +29,7 @@ def parse_args():
                         choices=["d", "o"])
     parser.add_argument("-t", "--timesteps", default=100, type=int,
                         help='Number of timesteps')
-    parser.add_argument("-k", "--optimismconstant", default=0.5, type=float,
-                        help='Optimistic Constant')
-    parser.add_argument("-r", "--runs", default=5, type=int,
+    parser.add_argument("-r", "--runs", default=1, type=int,
                         help='Number of Runs')
     return parser.parse_args()
 

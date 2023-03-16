@@ -46,7 +46,7 @@ def plot_many(kwargs, Regrets, Nash, Gaps, PercentBoundedPhi,percent_sampled):
     # plot the first array using the left y-axis
     ax1.plot(np.mean(Regrets,axis=0), color='red')
     ax1.set_xlabel('Iterations')
-    ax1.set_ylabel('Regret', color='red')
+    ax1.set_ylabel('Cumulative Regret', color='red')
 
     # create a twin axis object on the right side
     ax2 = ax1.twinx()

@@ -60,12 +60,12 @@ def random_active(game):
 
         rand_active_ind1 = nan_active_indices[rand_active_ind][0][0]
         rand_active_ind2 = nan_active_indices[rand_active_ind][0][1]
-        return rand_active_ind1, rand_active_ind2
+        return ind_to_prob_matrix_one_zero(rand_active_ind1, rand_active_ind2, game.n)
 
     if np.any(np.isnan(game.KnownU1)):
         rand_ind1 = np.argwhere(np.isnan(game.KnownU1))[0][0]
         rand_ind2 = np.argwhere(np.isnan(game.KnownU1))[0][1]
-        return rand_ind1, rand_ind2
+        return ind_to_prob_matrix_one_zero(rand_ind1, rand_ind2, game.n)
 def nearby_then_random(game):
 
     ind1, ind2 = np.unravel_index(np.argmax(game.OptPhi, axis=None), (game.n, game.n))
@@ -161,7 +161,6 @@ def prob_active(game):
     Phi = Phi/np.sum(Phi)
 
     prob_array = Phi.flatten()
-
     choice = np.random.choice(range(n ** 2), 1, p=prob_array)
 
     j = choice % n
