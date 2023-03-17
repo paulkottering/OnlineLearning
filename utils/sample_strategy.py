@@ -19,7 +19,8 @@ def sample_index(Game,i):
         return prob_match(Game)
     if i == "pa":
         return prob_active(Game)
-
+    if i == "da":
+        return descending_active_2(Game)
 def descending_active(game):
 
     reverse_ascending_order = np.argsort(game.OptPhi - game.PesPhi, axis=None)[::-1]
@@ -152,23 +153,37 @@ def prob_active(game):
     n = game.n
     Phi = np.copy(game.OptPhi)
 
-    for i in range(n):
-        for j in range(n):
-            if Phi[i,j] < np.max(game.PesPhi):
-                Phi[i,j] = 0.000001
+    mask = Phi < np.max(game.PesPhi)
+    Phi[mask] = 1e-8
 
-    Phi = Phi**3
-    Phi = Phi/np.sum(Phi)
+    Phi /= np.sum(Phi)
 
     prob_array = Phi.flatten()
-    choice = np.random.choice(range(n ** 2), 1, p=prob_array)
+    choice = np.random.choice(np.arange(prob_array.size), p=prob_array)
+    random_sample = np.unravel_index(choice, Phi.shape)
 
-    j = choice % n
-    i = choice // n
+    return random_sample, Phi
+def ind_to_prob_matrix_one_zero(sample_tuple,n,k):
+    shape = [n]*k
+    prob_matrix = np.zeros(shape)
+    prob_matrix[sample_tuple] = 1
+    return sample_tuple,prob_matrix
 
-    return i, j, Phi
-def ind_to_prob_matrix_one_zero(ind1,ind2,n):
-    prob_matrix = np.zeros((n,n))
-    prob_matrix[ind1,ind2] = 1
-    return ind1,ind2,prob_matrix
+def descending_active_2(game):
+    num_top_values = 10
+    sorted_indices = np.unravel_index(np.argsort(game.OptPhi.ravel())[-num_top_values:], game.OptPhi.shape)
+
+    # Sort the indices according to the highest value
+    sorted_indices = list(zip(*sorted_indices))
+    sorted_indices.reverse()
+    if game.OptPhi[sorted_indices[1]] < np.max(game.PesPhi):
+        return ind_to_prob_matrix_one_zero(sorted_indices[0], game.n, game.k)
+
+    for ind in sorted_indices:
+        if not np.isnan(game.KnownUs[0][ind]):
+            return ind_to_prob_matrix_one_zero(ind, game.n, game.k)
+
+    non_nan_indices = np.argwhere(~np.isnan(game.KnownUs[0]))
+    index = np.random.choice(non_nan_indices)
+    return ind_to_prob_matrix_one_zero(index, game.n, game.k)
 

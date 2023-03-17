@@ -18,13 +18,12 @@ def parse_args():
     # Set up arguments
     parser.add_argument("-n", "--dimension", default=5, type=int,
                         help='Number of Strategies for each player')
-    parser.add_argument("-sa", "--sample_strategy", default="or", type=str,
+    parser.add_argument("-k", "--players", default=5, type=int,
+                        help='Number of Players')
+    parser.add_argument("-sa", "--sample_strategy", default="pa", type=str,
                         help='sample_strategy',
-                        choices=["d", "ra", "nr", "r", "or", "lr","pr","pm","pa"] )
-    parser.add_argument("-se", "--selection_strategy", default="o", type=str,
-                        help='Selection strategy',
-                        choices=["o", "p"] )
-    parser.add_argument("-si", "--initial_strategy", default="d", type=str,
+                        choices=["pa","da"] )
+    parser.add_argument("-si", "--initial_strategy", default="o", type=str,
                         help = 'Initial strategy',
                         choices=["d", "o"])
     parser.add_argument("-t", "--timesteps", default=100, type=int,
@@ -36,28 +35,26 @@ def parse_args():
 def main(**kwargs):
     # Dimension of Problem
     n = kwargs.get("dimension")
+    k = kwargs.get("players")
     sa = kwargs.get("sample_strategy")
-    se = kwargs.get("selection_strategy")
     si = kwargs.get("initial_strategy")
     t_max = kwargs.get("timesteps")
     runs = kwargs.get("runs")
 
-    if si == "d":
-        iterations = n**2 - n + 1
-    elif si == "o":
-        iterations = n ** 2 + 1
     iterations = t_max
 
     Regrets = np.empty((runs,iterations))
+    CumRegrets = np.empty((runs, iterations))
     Nash = np.empty((runs,iterations))
     Gaps = np.empty((runs,iterations))
     PercentBoundedPhi = np.empty((runs,iterations))
     percent_sampled = np.empty((runs,iterations))
+    print(k)
+
     for r in range(runs):
         print(r)
 
-        Game = game(n)
-        NashIndices = FindNash(Game)
+        Game = game(n,k)
 
         initialize_game(Game, si)
 
@@ -65,25 +62,20 @@ def main(**kwargs):
             print("______")
             print(t)
 
-            i, j, prob = sample_index(Game, sa)
+            sample_tuple, prob = sample_index(Game, sa)
 
-            print(i, j)
-            Game.sample(i, j)
+            print(sample_tuple)
+            Game.sample(tuple(sample_tuple))
 
 
             #ind1, ind2 = select_index(Game, se)
             Regrets[r,t] = np.max(Game.UnknownGame) - np.sum(Game.UnknownGame * prob)
             Gaps[r,t] = (np.count_nonzero(Game.OptPhi < np.max(Game.PesPhi)) / (n ** 2) * 100)
 
-            if [i, j] in NashIndices:
-                Nash[r,t] = 100
-            else:
-                Nash[r,t] = 0
+            #PercentBoundedPhi[r,t] = np.count_nonzero(Game.OptPhi < np.max(Game.UnknownGame)) / (n ** 2) * 100
+            percent_sampled[r,t] = np.count_nonzero(np.isnan(Game.KnownUs[0]))/(n**k)*100
 
-            PercentBoundedPhi[r,t] = np.count_nonzero(Game.OptPhi < np.max(Game.UnknownGame)) / (n ** 2) * 100
-            percent_sampled[r,t] = np.count_nonzero(np.isnan(Game.KnownU1))/(n**2)*100
-
-            if not np.any(np.isnan(Game.KnownU1)):
+            if not np.any(np.isnan(Game.KnownUs[0])):
                 break
 
             #Game.check_bounds()
@@ -91,10 +83,10 @@ def main(**kwargs):
             # Update time index
             t += 1
 
-        Regrets[r, :] = np.cumsum(Regrets[r,:])
+        CumRegrets[r, :] = np.cumsum(Regrets[r,:])
 
     # create a figure and axis object
-    plot_many(kwargs, Regrets, Nash, Gaps, PercentBoundedPhi,percent_sampled)
+    plot_many(kwargs, Regrets,CumRegrets, Gaps,percent_sampled)
 
 
 if __name__ == "__main__":

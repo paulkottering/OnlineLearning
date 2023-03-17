@@ -9,5 +9,8 @@ def initialize_game(Game,i):
             Game.sample(k, k)
 
     if i == "o":
-        Game.sample(rand.randint(0,n), rand.randint(0,n))
+        n = Game.n
+        k = Game.k
+        zero = np.ones(k).astype(int)
+        Game.sample(tuple(zero))
 

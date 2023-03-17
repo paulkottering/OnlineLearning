@@ -1,131 +1,77 @@
 import numpy as np
 from numpy import random as rand
-from utils.updates import OptPesYPRecalc,OptPesY1Recalc,OptPesY2Recalc
+from utils.updates import opt_pes_recalc
 
 
 class game():
 
-    def __init__(self,n):
+    def __init__(self,n,k):
 
-        self.Potential = rand.randint(-12500, 12501, (n, n)) / 100000
+        shape = [n]*k
+        self.Potential = rand.randint(-12500, 12501, shape) / 100000
 
-        unknown_utility_two = np.zeros((n, n))
-        unknown_utility_one = np.zeros((n, n))
+        unknown_utilitys = [np.zeros(shape) for i in range(k)]
 
-        unknown_utility_two[:, -1] = 0
-        unknown_utility_one[-1, :] = 0
+        for p in range(k):
+            for i in range(1,n):
+                rel_slice = [slice(None)] * p + [i] + [Ellipsis]
+                prev_slice = [slice(None)] * p + [i-1] + [Ellipsis]
 
-        for i in range(n - 1):
-            unknown_utility_two[:, -2 - i] = unknown_utility_two[:, -1 - i] + self.Potential[:, -2 - i] - self.Potential[:, -1 - i]
-            unknown_utility_one[-2 - i, :] = unknown_utility_one[-1 - i, :] + self.Potential[-2 - i, :] - self.Potential[-1 - i]
+                unknown_utilitys[p][tuple(rel_slice)] = unknown_utilitys[p][tuple(prev_slice)] + self.Potential[tuple(rel_slice)] - self.Potential[tuple(prev_slice)]
 
-        unknown_utility_one += 0.25
-        unknown_utility_two += 0.25
+        for p in range(k):
+            unknown_utilitys[p] += 0.25
 
-        self.UnknownU1 = unknown_utility_one
-        self.UnknownU2 = unknown_utility_two
+        self.UnknownUs = unknown_utilitys
 
-        Phi = np.eye(n) - 1 / n * np.ones((n, n))
-        Xi = 1 / n * np.ones((n, n))
-
-        UnknownY1 = np.matmul(Phi, np.matmul(self.UnknownU1, Xi))
-        UnknownY2 = np.matmul(Xi, np.matmul(self.UnknownU2, Phi))
-        UnknownYP = np.matmul(Phi, np.matmul(self.UnknownU1, Phi))
-
-        Unknown_Game = UnknownYP + UnknownY1 + UnknownY2
+        Unknown_Game,Unknown_Game_Pes = opt_pes_recalc(unknown_utilitys,unknown_utilitys,n,k)
 
         self.UnknownGame = Unknown_Game
         self.n = n
+        self.k = k
 
         self.PhiMax = np.max(Unknown_Game)
         self.PhiMin = np.min(Unknown_Game)
 
-        self.KnownU2 = np.full((n, n), np.nan)
-        self.KnownU1 = np.full((n, n), np.nan)
+        self.KnownUs = [np.full(shape, np.nan) for i in range(k)]
 
-        self.OptPhi = np.ones((n,n))*(self.PhiMax+2)
-        self.PesPhi = np.ones((n,n))*(self.PhiMin-2)
+        self.OptPhi = np.ones(shape)*np.inf
+        self.PesPhi = np.ones(shape)*-np.inf
 
-        self.OptU1 = np.ones((n,n)) * 0.5
-        self.PesU1 = np.ones((n, n)) * 0
-        self.OptU2 = np.ones((n, n)) * 0.5
-        self.PesU2 = np.ones((n, n)) * 0
+        self.OptUs = [np.ones(shape) * 0.5 for i in range(k)]
+        self.PesUs = [np.ones(shape) * 0 for i in range(k)]
 
         self.number_samples = 0
 
-    def sample(self,i,j):
-
-        if np.isnan(self.KnownU1[i, j]):
+    def sample(self,sample_tuple):
+        if np.isnan(self.KnownUs[0][sample_tuple]):
 
             self.number_samples += 1
 
-            # Sample UnknownU1 and Unknown U2
-            U1Val = self.UnknownU1[i, j]
-            U2Val = self.UnknownU2[i, j]
-
-            # Update KnownU1 and KnownU2
-            self.KnownU1[i, j] = U1Val
-            self.KnownU2[i, j] = U2Val
-
-            # Update Samples in OptU1, PesU1, OptU2, PesU2
-            self.OptU1[i, j] = U1Val
-            self.PesU1[i, j] = U1Val
-
-            self.OptU2[i, j] = U2Val
-            self.PesU2[i, j] = U2Val
+            # Sample
+            for p in range(self.k):
+                u_val = self.UnknownUs[p][sample_tuple]
+                self.KnownUs[p][sample_tuple] = u_val
+                self.OptUs[p][sample_tuple] = u_val
+                self.PesUs[p][sample_tuple] = u_val
 
             # Update OptU1, PesU1, OptU2, PesU2
-            self.OptPesU1Update(i,j)
-            self.OptPesU2Update(i,j)
-
-            # Update OptY1,PesY1
-            OptY1, PesY1 = OptPesY1Recalc(self.OptU1,self.PesU1,self.n)
-            OptY2, PesY2 = OptPesY2Recalc(self.OptU2,self.PesU2,self.n)
-
-            # Recalculate OptYP1,PesYP1
-            OptYP1, PesYP1 = OptPesYPRecalc(self.OptU1,self.PesU1,self.n)
+            for p in range(self.k):
+                self.OptPesUUpdate(p, sample_tuple)
 
             # Update OptYP2,PesYP2
-            OptYP2, PesYP2 = OptPesYPRecalc(self.OptU2,self.PesU2,self.n)
-
-            OptYP = OptYP1
-            PesYP = PesYP1
-
-            # Optimistic potential matrix estimate
-            self.OptPhi = OptYP + np.array([OptY1] * self.n).T + np.array([OptY2] * self.n)
-
-            # Pessimistic potential matrix estimate
-            self.PesPhi = PesYP + np.array([PesY1] * self.n).T + np.array([PesY2] * self.n)
-
-    def OptPesU2Update(self,a,b):
-
-        for j in range(self.n):
-            if j != b:
-                OptRange = np.minimum(self.PhiMax, self.OptPhi[a, j]) - np.maximum(self.PesPhi[a, b], self.PhiMin)
-                PesRange = np.maximum(self.PhiMin, self.PesPhi[a, j]) - np.minimum(self.OptPhi[a, b], self.PhiMax)
-
-                # if PesU2[a, b] + PhiMin - PhiMax > UnknownGame[a,j]:
-                #     print(PesU2[a, b] + PhiMin - PhiMax - UnknownGame[a,j])
-                #     print('Miss5')
-                OptRange = self.PhiMax - self.PhiMin
-                PesRange = - self.PhiMax + self.PhiMin
-
-                self.OptU2[a, j] = np.minimum(self.OptU2[a, j], self.OptU2[a, b] + OptRange)
-                self.PesU2[a, j] = np.maximum(self.PesU2[a, j], self.PesU2[a, b] + PesRange)
+            self.OptPhi, self.PesPhi = opt_pes_recalc(self.OptUs,self.PesUs,self.n,self.k)
 
 
-    def OptPesU1Update(self,a,b):
+    def OptPesUUpdate(self,p,sample_tuple):
 
-        for i in range(self.n):
-            if i != a:
-                OptRange = np.minimum(self.PhiMax, self.OptPhi[i, b]) - np.maximum(self.PesPhi[a, b], self.PhiMin)
-                PesRange = np.maximum(self.PhiMin, self.PesPhi[i, b]) - np.minimum(self.OptPhi[a, b], self.PhiMax)
+        slices = [sample_tuple[i] if i != p else slice(None) for i in range(self.k)]
 
-                OptRange = self.PhiMax - self.PhiMin
-                PesRange = - self.PhiMax + self.PhiMin
+        upper = self.OptUs[p][sample_tuple] +self.PhiMax - self.PhiMin
+        lower = self.PesUs[p][sample_tuple] +self.PhiMin - self.PhiMax
 
-                # self.OptU1[i, b] = np.minimum(self.OptU1[i, b], self.OptU1[a, b] + OptRange)
-                # self.PesU1[i, b] = np.maximum(self.PesU1[i, b], self.PesU1[a, b] + PesRange)
+        self.OptUs[p][tuple(slices)] = np.minimum(self.OptUs[p][tuple(slices)],upper)
+        self.PesUs[p][tuple(slices)] = np.maximum(self.PesUs[p][tuple(slices)],lower)
 
 
     def check_bounds(self):
