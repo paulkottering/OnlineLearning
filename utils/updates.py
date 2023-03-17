@@ -15,9 +15,10 @@ def opt_pes_recalc(opt_us,pes_us,n,k):
                 pes = np.maximum(pes, pes_y)
             opt_phi += opt
             pes_phi += pes
-    return opt_phi,pes_phi
+    return opt_phi, pes_phi
 
 def opt_pes_mat_recalc(opt_u, pes_u, n, k, inactive):
+
     shape = [n] * k
     opt_y = np.ones(shape)
     pes_y = np.ones(shape)
@@ -38,18 +39,18 @@ def opt_pes_gen_recalc(OptU, PesU,n,k,inactive,ind_tuple):
 
     for tuple_ in tuples:
         const = 1
-        for ks in range(k):
+        for ks in [i for i in range(k) if i not in inactive]:
             if tuple_[ks] == ind_tuple[ks]:
                 const *= (1-1/n)
             else:
                 const *= (-1/n)
 
         const *= (1/n)**num_inactive
-        if const > 0:
-            sum_opt += OptU[tuple_]*const
+        if const >= 0:
+            sum_opt += OptU[tuple_] * const
             sum_pes += PesU[tuple_] * const
         else:
-            sum_opt += PesU[tuple_]*const
-            sum_opt += OptU[tuple_] * const
+            sum_opt += PesU[tuple_] * const
+            sum_pes += OptU[tuple_] * const
 
-    return sum_opt,sum_pes
+    return sum_opt, sum_pes

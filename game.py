@@ -24,9 +24,10 @@ class game():
 
         self.UnknownUs = unknown_utilitys
 
-        Unknown_Game,Unknown_Game_Pes = opt_pes_recalc(unknown_utilitys,unknown_utilitys,n,k)
+        Unknown_Game, Unknown_Game_Pes = opt_pes_recalc(unknown_utilitys,unknown_utilitys,n,k)
 
         self.UnknownGame = Unknown_Game
+        print(Unknown_Game)
         self.n = n
         self.k = k
 
@@ -82,14 +83,9 @@ class game():
         if np.any(self.PesPhi > self.UnknownGame):
             print("PesPhi")
 
-        if np.any(self.OptU1 < self.UnknownU1):
-            print("OptU1")
+        for p in range(self.k):
+            if np.any(self.OptUs[p] < self.UnknownUs[p]):
+                print(p,"Opt")
+            if np.any(self.PesUs[p] > self.UnknownUs[p]):
+                print(p,"Pes")
 
-        if np.any(self.PesU1 > self.UnknownU1):
-            print("PesU1")
-
-        if np.any(self.OptU2 < self.UnknownU2):
-            print("OptU2")
-
-        if np.any(self.PesU2 > self.UnknownU2):
-            print("PesU2")

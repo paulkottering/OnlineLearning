@@ -39,13 +39,14 @@ def plot_one(Game,Vs,Percent,Nash,Gaps,PercentBoundedPhi):
     # set the title of the plot
     plt.savefig("Figures/Test")
 
-def plot_many(kwargs, Regrets,CumRegrets, Gaps,percent_sampled):
+def plot_many(kwargs, regrets,cumulative_regret, Gaps,percent_sampled,game_mean):
 
     fig, ax1 = plt.subplots()
     fig.set_figwidth(15)
     # plot the first array using the left y-axis
     #ax1.plot(np.mean(Regrets,axis=0), color='red')
-    ax1.plot(np.mean(CumRegrets, axis=0), color='red')
+    ax1.plot(np.mean(cumulative_regret, axis=0), color='red')
+    ax1.plot(game_mean*range(len(np.mean(cumulative_regret, axis=0))), color='blue')
     ax1.set_xlabel('Iterations')
     ax1.set_ylabel('Cumulative Regret', color='red')
 
@@ -78,7 +79,7 @@ def plot_many(kwargs, Regrets,CumRegrets, Gaps,percent_sampled):
     sa = kwargs.get("sample_strategy")
     si = kwargs.get("initial_strategy")
     runs = kwargs.get("runs")
-    title = str(n)+str(k)+"_"+sa+"_"+si+"_"+str(runs)+"_"
+    title = "Number of Players: "+str(k)+"  Number of strategies per player:  "+str(n)+"  Sampling Strategy:  "+sa
     plt.title(title)
     # set the title of the plot
-    plt.savefig("Figures/Test_"+title)
+    plt.savefig("Figures/Test_"+str(n)+str(k)+"_"+sa+"_"+si+"_"+str(runs)+"_")

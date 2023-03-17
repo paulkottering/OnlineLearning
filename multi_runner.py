@@ -43,50 +43,54 @@ def main(**kwargs):
 
     iterations = t_max
 
-    Regrets = np.empty((runs,iterations))
-    CumRegrets = np.empty((runs, iterations))
-    Nash = np.empty((runs,iterations))
-    Gaps = np.empty((runs,iterations))
-    PercentBoundedPhi = np.empty((runs,iterations))
-    percent_sampled = np.empty((runs,iterations))
-    print(k)
+    regrets = []
+    cumulative_regrets = []
+    number_of_nonactive = []
+    percent_sampled = []
 
     for r in range(runs):
         print(r)
+        regrets.append([])
+        cumulative_regrets.append([])
+        number_of_nonactive.append([])
+        percent_sampled.append([])
 
         Game = game(n,k)
 
         initialize_game(Game, si)
-
+        cumulative_regret = 0
         for t in range(iterations):
             print("______")
             print(t)
 
             sample_tuple, prob = sample_index(Game, sa)
 
-            print(sample_tuple)
+            print("Sample: ",sample_tuple)
             Game.sample(tuple(sample_tuple))
 
 
             #ind1, ind2 = select_index(Game, se)
-            Regrets[r,t] = np.max(Game.UnknownGame) - np.sum(Game.UnknownGame * prob)
-            Gaps[r,t] = (np.count_nonzero(Game.OptPhi < np.max(Game.PesPhi)) / (n ** 2) * 100)
+            regrets[r].append(np.max(Game.UnknownGame) - np.sum(Game.UnknownGame * prob))
+            print("Regret: ",np.max(Game.UnknownGame) - np.sum(Game.UnknownGame * prob))
 
-            #PercentBoundedPhi[r,t] = np.count_nonzero(Game.OptPhi < np.max(Game.UnknownGame)) / (n ** 2) * 100
-            percent_sampled[r,t] = np.count_nonzero(np.isnan(Game.KnownUs[0]))/(n**k)*100
+            cumulative_regret += regrets[r][t]
+            cumulative_regrets[r].append(cumulative_regret)
+            print("Cumulative Regret: ",cumulative_regret)
+
+            number_of_nonactive[r].append(np.count_nonzero(Game.OptPhi < np.max(Game.PesPhi)) / (n ** 2) * 100)
+
+            percent_sampled[r].append(np.count_nonzero(np.isnan(Game.KnownUs[0]))/(n**k)*100)
 
             if not np.any(np.isnan(Game.KnownUs[0])):
                 break
 
-            #Game.check_bounds()
+            Game.check_bounds()
 
             # Update time index
             t += 1
-
-        CumRegrets[r, :] = np.cumsum(Regrets[r,:])
-
+    print(cumulative_regrets)
     # create a figure and axis object
-    plot_many(kwargs, Regrets,CumRegrets, Gaps,percent_sampled)
+    plot_many(kwargs, regrets,np.array(cumulative_regrets), number_of_nonactive,percent_sampled, np.max(Game.UnknownGame)-(np.sum(Game.UnknownGame)/(n**k)))
 
 
 if __name__ == "__main__":

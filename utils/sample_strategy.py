@@ -95,7 +95,7 @@ def nearby_then_random(game):
         rand_ind2 = np.argwhere(np.isnan(game.KnownU1))[0][1]
         return ind_to_prob_matrix_one_zero(rand_ind1,rand_ind2,game.n)
 def random_index(game):
-    if np.any(np.isnan(game.KnownU1)):
+    if np.any(np.isnan(game.KnownUs[0])):
         rand_ind1 = np.argwhere(np.isnan(game.KnownU1))[0][0]
         rand_ind2 = np.argwhere(np.isnan(game.KnownU1))[0][1]
         return ind_to_prob_matrix_one_zero(rand_ind1,rand_ind2,game.n)
@@ -170,17 +170,18 @@ def ind_to_prob_matrix_one_zero(sample_tuple,n,k):
     return sample_tuple,prob_matrix
 
 def descending_active_2(game):
-    num_top_values = 10
+    num_top_values = 100
     sorted_indices = np.unravel_index(np.argsort(game.OptPhi.ravel())[-num_top_values:], game.OptPhi.shape)
 
     # Sort the indices according to the highest value
     sorted_indices = list(zip(*sorted_indices))
     sorted_indices.reverse()
+
     if game.OptPhi[sorted_indices[1]] < np.max(game.PesPhi):
         return ind_to_prob_matrix_one_zero(sorted_indices[0], game.n, game.k)
 
     for ind in sorted_indices:
-        if not np.isnan(game.KnownUs[0][ind]):
+        if (np.isnan(game.KnownUs[0][ind])) and game.OptPhi[ind] > np.max(game.PesPhi):
             return ind_to_prob_matrix_one_zero(ind, game.n, game.k)
 
     non_nan_indices = np.argwhere(~np.isnan(game.KnownUs[0]))
