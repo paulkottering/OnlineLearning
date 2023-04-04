@@ -1,14 +1,12 @@
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
 from game import game
 
 from utils.Nash import FindNash
 from utils.sample_strategy import sample_index
-from utils.selection_strategy import select_index
-from utils.plotter import plot_one,plot_many
+from utils.plotter import plot_many
 from utils.initial_strategy import initialize_game
-
+import matplotlib.pyplot as plt
 
 def parse_args():
     """
@@ -22,7 +20,7 @@ def parse_args():
                         help='Number of Players')
     parser.add_argument("-sa", "--sample_strategy", default="pa", type=str,
                         help='sample_strategy',
-                        choices=["pa","da"] )
+                        choices=["pa","da","da2","pa2","pa3","pa4"] )
     parser.add_argument("-si", "--initial_strategy", default="o", type=str,
                         help = 'Initial strategy',
                         choices=["d", "o"])
@@ -47,6 +45,7 @@ def main(**kwargs):
     cumulative_regrets = []
     number_of_nonactive = []
     percent_sampled = []
+    max_tuples = []
 
     for r in range(runs):
         print(r)
@@ -54,6 +53,7 @@ def main(**kwargs):
         cumulative_regrets.append([])
         number_of_nonactive.append([])
         percent_sampled.append([])
+        max_tuples.append([])
 
         Game = game(n,k)
 
@@ -68,6 +68,9 @@ def main(**kwargs):
             print("Sample: ",sample_tuple)
             Game.sample(tuple(sample_tuple))
 
+            max_tuple = np.unravel_index(np.argmax(Game.OptPhi), Game.OptPhi.shape)
+            max_tuples[r].append(Game.UnknownGame[max_tuple])
+
 
             #ind1, ind2 = select_index(Game, se)
             regrets[r].append(np.max(Game.UnknownGame) - np.sum(Game.UnknownGame * prob))
@@ -77,7 +80,9 @@ def main(**kwargs):
             cumulative_regrets[r].append(cumulative_regret)
             print("Cumulative Regret: ",cumulative_regret)
 
-            number_of_nonactive[r].append(np.count_nonzero(Game.OptPhi < np.max(Game.PesPhi)) / (n ** 2) * 100)
+            #number_of_nonactive[r].append(np.count_nonzero(Game.OptPhi < np.max(Game.PesPhi)) / (n ** k) * 100)
+            Game.update_active()
+            number_of_nonactive[r].append(np.sum(Game.active) / (n ** k) * 100)
 
             percent_sampled[r].append(np.count_nonzero(np.isnan(Game.KnownUs[0]))/(n**k)*100)
 
@@ -88,9 +93,11 @@ def main(**kwargs):
 
             # Update time index
             t += 1
+
+    diff = Game.UnknownGame - np.max(Game.UnknownGame)
     print(cumulative_regrets)
     # create a figure and axis object
-    plot_many(kwargs, regrets,np.array(cumulative_regrets), number_of_nonactive,percent_sampled, np.max(Game.UnknownGame)-(np.sum(Game.UnknownGame)/(n**k)))
+    plot_many(kwargs, regrets,np.array(cumulative_regrets), number_of_nonactive,percent_sampled, np.max(Game.UnknownGame)-(np.sum(Game.UnknownGame)/(n**k)),max_tuples)
 
 
 if __name__ == "__main__":

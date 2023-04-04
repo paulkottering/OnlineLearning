@@ -5,7 +5,6 @@ from game import game
 
 from utils.Nash import FindNash
 from utils.sample_strategy import sample_index
-from utils.selection_strategy import select_index
 from utils.plotter import plot_one
 from utils.initial_strategy import initialize_game
 def parse_args():

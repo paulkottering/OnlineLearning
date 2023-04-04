@@ -1,5 +1,5 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 def sample_index(Game,i):
     if i == "d":
         return descending_active(Game)
@@ -21,6 +21,12 @@ def sample_index(Game,i):
         return prob_active(Game)
     if i == "da":
         return descending_active_2(Game)
+    if i == "da2":
+        return descending_active_3(Game)
+    if i == "pa3":
+        return prob_active_3(Game)
+    if i == "pa4":
+        return prob_active_4(Game)
 def descending_active(game):
 
     reverse_ascending_order = np.argsort(game.OptPhi - game.PesPhi, axis=None)[::-1]
@@ -163,6 +169,155 @@ def prob_active(game):
     random_sample = np.unravel_index(choice, Phi.shape)
 
     return random_sample, Phi
+
+def prob_active_2(game):
+    n = game.n
+    k = game.k
+    phi = np.copy(game.OptPhi)
+
+    #mask = phi < np.max(game.PesPhi)
+    #phi[mask] = 0
+
+    phi = phi - np.min(game.OptPhi)
+    mask = phi < np.max(game.PesPhi) - np.min(game.OptPhi)
+    phi[mask] = 1e-8
+
+    phi /= np.sum(phi)
+
+    prob_array = phi.flatten()
+    choice = np.random.choice(np.arange(prob_array.size), p=prob_array)
+    random_sample = np.unravel_index(choice, phi.shape)
+
+    return random_sample, phi
+
+def prob_active_3(game):
+    n = game.n
+    k = game.k
+    phi = np.copy(game.OptPhi)
+
+    mask = phi < np.max(game.PesPhi)
+    phi[mask] = 0
+
+    mask2 = game.Values < 0
+    phi[mask2] = 0
+
+    phi = phi - np.min(game.OptPhi)
+    mask = phi < np.max(game.PesPhi) - np.min(game.OptPhi)
+    phi[mask] = 1e-15
+    phi[mask2] = 1e-15
+
+    max_tuple = np.unravel_index(np.argmax(game.UnknownGame), game.OptPhi.shape)
+    #phi_2 = np.zeros([n]*k)
+    phi_2 = np.copy(phi)
+
+    phi[max_tuple] = 1e-15
+    phi /= np.sum(phi)
+
+    prob_array = phi.flatten()
+    opt_prob_array = game.UnknownGame.flatten()
+
+    fig, ax1 = plt.subplots()
+
+    ax1.scatter(range(len(prob_array)),prob_array,color='red')
+
+    ax2 = ax1.twinx()
+    ax3 = ax1.twinx()
+    ax3.scatter(range(len(prob_array)), phi_2.flatten(), color='green')
+    ax2.scatter(range(len(opt_prob_array)), opt_prob_array,color='blue')
+    plt.show()
+    choice = np.random.choice(np.arange(prob_array.size), p=prob_array)
+    random_sample = np.unravel_index(choice, phi.shape)
+
+    return random_sample, phi
+
+def prob_active_4(game):
+    n = game.n
+    k = game.k
+    phi = np.copy(game.OptPhi)
+
+    mask = phi < np.max(game.PesPhi)
+    phi[mask] = 0
+
+    mask2 = game.Values < 0
+    phi[mask2] = 0
+
+    phi = phi - np.min(game.OptPhi)
+    mask = phi < np.max(game.PesPhi) - np.min(game.OptPhi)
+    phi[mask] = 1e-15
+    phi[mask2] = 1e-15
+
+    max_tuple = np.unravel_index(np.argmax(game.OptPhi), game.OptPhi.shape)
+    phi_2 = np.zeros([n]*k)
+    phi_2[max_tuple] = 1
+
+    if ~np.isnan(game.KnownUs[0][max_tuple]):
+        a = np.random.rand(1)
+        print(a)
+        if a < 0.1:
+            phi /= np.sum(phi)
+            phi_2 = np.copy(phi)
+
+    prob_array = phi_2.flatten()
+    opt_prob_array = game.UnknownGame.flatten()
+
+    # fig, ax1 = plt.subplots()
+    #
+    # ax1.scatter(range(len(prob_array)),prob_array,color='red')
+    #
+    # ax2 = ax1.twinx()
+    # ax3 = ax1.twinx()
+    # ax3.scatter(range(len(prob_array)), phi.flatten(), color='green')
+    # ax2.scatter(range(len(opt_prob_array)), opt_prob_array,color='blue')
+    # plt.show()
+    choice = np.random.choice(np.arange(prob_array.size), p=prob_array)
+    random_sample = np.unravel_index(choice, phi.shape)
+
+    return random_sample, phi_2
+
+def prob_active_5(game):
+    n = game.n
+    k = game.k
+    phi = np.copy(game.OptPhi)
+
+    mask = phi < np.max(game.PesPhi)
+    phi[mask] = 0
+
+    mask2 = game.Values < 0
+    phi[mask2] = 0
+
+    phi = phi - np.min(game.OptPhi)
+    mask = phi < np.max(game.PesPhi) - np.min(game.OptPhi)
+    phi[mask] = 1e-15
+    phi[mask2] = 1e-15
+
+    max_tuple = np.unravel_index(np.argmax(game.OptPhi), game.OptPhi.shape)
+    phi_2 = np.zeros([n]*k)
+    phi_2[max_tuple] = 1
+
+    if ~np.isnan(game.KnownUs[0][max_tuple]):
+        a = np.random.rand(1)
+        print(a)
+        if a < 0.1:
+            phi /= np.sum(phi)
+            phi_2 = np.copy(phi)
+
+    prob_array = phi_2.flatten()
+    opt_prob_array = game.UnknownGame.flatten()
+
+    # fig, ax1 = plt.subplots()
+    #
+    # ax1.scatter(range(len(prob_array)),prob_array,color='red')
+    #
+    # ax2 = ax1.twinx()
+    # ax3 = ax1.twinx()
+    # ax3.scatter(range(len(prob_array)), phi.flatten(), color='green')
+    # ax2.scatter(range(len(opt_prob_array)), opt_prob_array,color='blue')
+    # plt.show()
+    choice = np.random.choice(np.arange(prob_array.size), p=prob_array)
+    random_sample = np.unravel_index(choice, phi.shape)
+
+    return random_sample, phi_2
+
 def ind_to_prob_matrix_one_zero(sample_tuple,n,k):
     shape = [n]*k
     prob_matrix = np.zeros(shape)
@@ -187,4 +342,12 @@ def descending_active_2(game):
     non_nan_indices = np.argwhere(~np.isnan(game.KnownUs[0]))
     index = np.random.choice(non_nan_indices)
     return ind_to_prob_matrix_one_zero(index, game.n, game.k)
+
+def descending_active_3(game):
+    sorted_indices = np.unravel_index(np.argsort(game.OptPhi.ravel())[:], game.OptPhi.shape)
+
+    # Sort the indices according to the highest value
+    sorted_indices = list(zip(*sorted_indices))
+    sorted_indices.reverse()
+    return ind_to_prob_matrix_one_zero(sorted_indices[0], game.n, game.k)
 
