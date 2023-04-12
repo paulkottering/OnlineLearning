@@ -1,12 +1,11 @@
 import argparse
 import numpy as np
-from game import game
+from game import potential_game, congestion_game
 
-from utils.Nash import FindNash
-from utils.sample_strategy import sample_index
 from utils.plotter import plot_many
-from utils.initial_strategy import initialize_game
-import matplotlib.pyplot as plt
+from utils.algos import optimistic_solver,nash_ucb
+from utils.regret import potential_regret,nash_regret,Nikaido_Isoda_regret
+from utils.game_maker import make_game
 
 def parse_args():
     """
@@ -18,86 +17,80 @@ def parse_args():
                         help='Number of Strategies for each player')
     parser.add_argument("-k", "--players", default=5, type=int,
                         help='Number of Players')
-    parser.add_argument("-sa", "--sample_strategy", default="pa", type=str,
-                        help='sample_strategy',
-                        choices=["pa","da","da2","pa2","pa3","pa4"] )
-    parser.add_argument("-si", "--initial_strategy", default="o", type=str,
-                        help = 'Initial strategy',
-                        choices=["d", "o"])
     parser.add_argument("-t", "--timesteps", default=100, type=int,
                         help='Number of timesteps')
     parser.add_argument("-r", "--runs", default=1, type=int,
                         help='Number of Runs')
+    parser.add_argument("-nl", "--noise", default=0, type=float,
+                        help='Noise Level')
+    parser.add_argument("-c", "--ucb_constant", default=0.1, type=float,
+                        help='UCB Constant')
+    parser.add_argument("-a", "--alpha", default=0.1, type=float,
+                        help='Alpha')
+    parser.add_argument("-g", "--game", default="congestion", type=str,
+                        help='Game Type')
+    parser.add_argument("-s", "--solver", default="nash_ucb", type=str,
+                        help='Which solver to use')
+
     return parser.parse_args()
 
 def main(**kwargs):
     # Dimension of Problem
     n = kwargs.get("dimension")
     k = kwargs.get("players")
-    sa = kwargs.get("sample_strategy")
-    si = kwargs.get("initial_strategy")
     t_max = kwargs.get("timesteps")
     runs = kwargs.get("runs")
+    nl = kwargs.get("noise")
+    c = kwargs.get("ucb_constant")
+    alpha = kwargs.get("alpha")
+    g = kwargs.get("game")
+    s = kwargs.get("solver")
 
     iterations = t_max
 
     regrets = []
     cumulative_regrets = []
-    number_of_nonactive = []
-    percent_sampled = []
-    max_tuples = []
 
     for r in range(runs):
         print(r)
         regrets.append([])
         cumulative_regrets.append([])
-        number_of_nonactive.append([])
-        percent_sampled.append([])
-        max_tuples.append([])
 
-        Game = game(n,k)
+        if g == "random":
+            Potential, unknown_utilitys = make_game(g, n, k)
+            Game = potential_game(Potential, unknown_utilitys,nl)
+        if g == "congestion":
+            number_facilities, number_agents, facility_means = make_game(g, n, k)
+            Game = congestion_game(facility_means,number_agents,nl)
 
-        initialize_game(Game, si)
+        if s == "optimistic":
+            algorithm = optimistic_solver(Game,c, alpha)
+        if s == "nash_ucb":
+            algorithm = nash_ucb(Game,iterations)
+
         cumulative_regret = 0
         for t in range(iterations):
-            print("______")
-            print(t)
 
-            sample_tuple, prob = sample_index(Game, sa)
+            prob = algorithm.next_sample_prob(Game)
 
-            print("Sample: ",sample_tuple)
+            choice = np.random.choice(np.arange(prob.size), p=prob.flatten())
+            sample_tuple = np.unravel_index(choice, prob.shape)
+
             Game.sample(tuple(sample_tuple))
 
-            max_tuple = np.unravel_index(np.argmax(Game.OptPhi), Game.OptPhi.shape)
-            max_tuples[r].append(Game.UnknownGame[max_tuple])
-
-
-            #ind1, ind2 = select_index(Game, se)
-            regrets[r].append(np.max(Game.UnknownGame) - np.sum(Game.UnknownGame * prob))
-            print("Regret: ",np.max(Game.UnknownGame) - np.sum(Game.UnknownGame * prob))
+            regrets[r].append(potential_regret(Game,prob))
 
             cumulative_regret += regrets[r][t]
             cumulative_regrets[r].append(cumulative_regret)
-            print("Cumulative Regret: ",cumulative_regret)
 
-            #number_of_nonactive[r].append(np.count_nonzero(Game.OptPhi < np.max(Game.PesPhi)) / (n ** k) * 100)
-            Game.update_active()
-            number_of_nonactive[r].append(np.sum(Game.active) / (n ** k) * 100)
+            print("______")
+            print(t)
+            print("Sample: ", sample_tuple)
+            print("Regret: ", regrets[r][t])
+            print("Cumulative Regret: ", cumulative_regret)
 
-            percent_sampled[r].append(np.count_nonzero(np.isnan(Game.KnownUs[0]))/(n**k)*100)
-
-            if not np.any(np.isnan(Game.KnownUs[0])):
-                break
-
-            Game.check_bounds()
-
-            # Update time index
-            t += 1
-
-    diff = Game.UnknownGame - np.max(Game.UnknownGame)
-    print(cumulative_regrets)
     # create a figure and axis object
-    plot_many(kwargs, regrets,np.array(cumulative_regrets), number_of_nonactive,percent_sampled, np.max(Game.UnknownGame)-(np.sum(Game.UnknownGame)/(n**k)),max_tuples)
+    plot_many(kwargs, np.array(cumulative_regrets), np.max(Game.Potential)-(np.sum(Game.Potential)/(n**k)))
 
 
 if __name__ == "__main__":
