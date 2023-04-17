@@ -3,8 +3,8 @@ import numpy as np
 from game import potential_game, congestion_game
 
 from utils.plotter import plot_many
-from utils.algos import optimistic_solver,nash_ucb
-from utils.regret import potential_regret,nash_regret,Nikaido_Isoda_regret
+from utils.algos import optimistic_solver,nash_ucb,exponential_weights_annealing,nash_ca,exponential_weights_annealing_new
+from utils.regret import regret
 from utils.game_maker import make_game
 
 def parse_args():
@@ -21,6 +21,8 @@ def parse_args():
                         help='Number of timesteps')
     parser.add_argument("-r", "--runs", default=1, type=int,
                         help='Number of Runs')
+    parser.add_argument("-e", "--regret", default="nash", type=str,
+                        help='Type of Regret')
     parser.add_argument("-nl", "--noise", default=0, type=float,
                         help='Noise Level')
     parser.add_argument("-c", "--ucb_constant", default=0.1, type=float,
@@ -29,7 +31,7 @@ def parse_args():
                         help='Alpha')
     parser.add_argument("-g", "--game", default="congestion", type=str,
                         help='Game Type')
-    parser.add_argument("-s", "--solver", default="nash_ucb", type=str,
+    parser.add_argument("-s", "--solver", default="optimistic", type=str,
                         help='Which solver to use')
 
     return parser.parse_args()
@@ -45,6 +47,7 @@ def main(**kwargs):
     alpha = kwargs.get("alpha")
     g = kwargs.get("game")
     s = kwargs.get("solver")
+    e = kwargs.get("regret")
 
     iterations = t_max
 
@@ -67,6 +70,13 @@ def main(**kwargs):
             algorithm = optimistic_solver(Game,c, alpha)
         if s == "nash_ucb":
             algorithm = nash_ucb(Game,iterations)
+        if s == "exp_weight":
+            algorithm = exponential_weights_annealing_new(Game)
+        if s == "nash_ca":
+            algorithm = nash_ca(Game, c)
+
+
+        reg = regret(Game)
 
         cumulative_regret = 0
         for t in range(iterations):
@@ -78,7 +88,8 @@ def main(**kwargs):
 
             Game.sample(tuple(sample_tuple))
 
-            regrets[r].append(potential_regret(Game,prob))
+            regrets[r].append(reg.regrets(e,prob))
+
 
             cumulative_regret += regrets[r][t]
             cumulative_regrets[r].append(cumulative_regret)
@@ -89,8 +100,10 @@ def main(**kwargs):
             print("Regret: ", regrets[r][t])
             print("Cumulative Regret: ", cumulative_regret)
 
+    av_regret_val = reg.av_regret(e)
+
     # create a figure and axis object
-    plot_many(kwargs, np.array(cumulative_regrets), np.max(Game.Potential)-(np.sum(Game.Potential)/(n**k)))
+    plot_many(kwargs, np.array(cumulative_regrets),av_regret_val)
 
 
 if __name__ == "__main__":

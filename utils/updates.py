@@ -47,8 +47,8 @@ def opt_pes_recalc(matrices,opt_us,pes_us,n,k):
 
             opt_phi_max += opt_max
             pes_phi_min += pes_min
-    diff = np.sum(np.abs(opt_phi-opt_phi_max))
-    return opt_phi, pes_phi,diff
+
+    return opt_phi, pes_phi
 
 def opt_pes_recalc_make(n,k):
 

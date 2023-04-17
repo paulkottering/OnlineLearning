@@ -27,6 +27,6 @@ def make_game(game_type,n,k):
     if game_type == "congestion":
         number_facilities = n
         number_agents = k
-        congestion_functions_means = [np.random.randint(1, 5, size=k) for i in range(number_facilities)]
+        congestion_functions_means = [np.random.uniform(0, 1, size=k) for i in range(number_facilities)]
 
         return number_facilities, number_agents, congestion_functions_means
