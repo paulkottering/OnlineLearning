@@ -50,6 +50,54 @@ def opt_pes_recalc(matrices,opt_us,pes_us,n,k):
 
     return opt_phi, pes_phi
 
+def opt_pes_recalc_raw(matrices,opt_us,pes_us,n,k):
+
+    shape = [n] * k
+    opt_phi = np.zeros(shape)
+    pes_phi = np.zeros(shape)
+
+    opt_phi_max = np.zeros(shape)
+    pes_phi_min = np.zeros(shape)
+
+    tuples = list(np.indices(shape).reshape(k, -1).T)
+
+    for i in range(k):
+
+        combo_list = list(combinations(np.arange(k), i))
+
+        for l in range(len(combo_list)):
+
+            opt = np.ones(shape)*float(np.inf)
+            pes = np.ones(shape)*float(-np.inf)
+
+            opt_max = np.ones(shape)*float(-np.inf)
+            pes_min = np.ones(shape)*float(np.inf)
+
+            inactive = combo_list[l]
+
+            for utility_index in [i for i in range(k) if i not in inactive]:
+                opt_y = np.zeros(shape)
+                pes_y = np.zeros(shape)
+
+                for t in range(len(tuples)):
+                    tuple_ = tuples[t]
+                    # opt_y[tuple(tuple_)] =
+                    # pes_y[tuple(tuple_)] =
+
+                opt = np.minimum(opt, opt_y)
+                pes = np.maximum(pes, pes_y)
+
+                opt_max = np.maximum(opt_max, opt_y)
+                pes_min = np.minimum(pes_min, pes_y)
+
+            opt_phi += opt
+            pes_phi += pes
+
+            opt_phi_max += opt_max
+            pes_phi_min += pes_min
+
+    return opt_phi, pes_phi
+
 def opt_pes_recalc_make(n,k):
 
     shape = [n] * k

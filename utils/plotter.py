@@ -17,7 +17,8 @@ def plot_many(kwargs,cumulative_regret,game_mean):
     s = kwargs.get("solver")
     runs = kwargs.get("runs")
     regret = kwargs.get("regret")
+    game = kwargs.get("game")
     title = "Number of Players: "+str(k)+"  Number of strategies per player:  "+str(n)+"  Algorithm:  "+ s
     plt.title(title)
     # set the title of the plot
-    plt.savefig("Figures/Test_"+str(n)+str(k)+"_"+s+"_"+str(runs)+"_"+str(regret))
+    plt.savefig("Figures/"+str(game)+"_"+str(n)+str(k)+"_"+s+"_"+str(runs)+"_"+str(regret))

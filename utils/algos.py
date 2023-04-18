@@ -1,13 +1,20 @@
 import numpy as np
 from numpy import random as rand
 from utils.updates import opt_pes_recalc, opt_pes_recalc_make
-import matplotlib.pyplot as plt
 import itertools
 
 class optimistic_solver():
-
+    """
+    custom optimistic solver algorithm class.
+    """
     def __init__(self, game, c, alpha):
-        # Initialize the optimistic_solver class
+        """
+        Initialize the optimistic_solver class.
+
+        :param game: The game object representing the game to solve.
+        :param c: The exploration-exploitation trade-off constant.
+        :param alpha: The random probability threshold for exploration.
+        """
 
         self.n = game.n
         self.k = game.k
@@ -26,8 +33,11 @@ class optimistic_solver():
         self.PesUs = [np.ones([self.n] * self.k) * game.MinU for i in range(self.k)]
 
     def update_us(self, game):
-        # Update the optimistic and pessimistic utility matrices
+        """
+        Update the optimistic and pessimistic utility matrices.
 
+        :param game: The game object representing the game to solve.
+        """
         shape = [self.n] * self.k
         tuples = list(itertools.product(*[range(dim) for dim in shape]))
 
@@ -44,11 +54,18 @@ class optimistic_solver():
                 self.PesUs[p][tuple_] = pes_mean - self.c * np.sqrt(np.log(game.t) / number)
 
     def update_potential(self):
-        # Update the optimistic and pessimistic potential matices
+        """
+        Update the optimistic and pessimistic potential matrices.
+        """
         self.OptPhi, self.PesPhi = opt_pes_recalc(self.matrices, self.OptUs, self.PesUs, self.n, self.k)
 
     def next_sample_prob(self, game):
-        # Calculate the probabilities for the next sample
+        """
+        Calculate the probabilities for the next sample.
+
+        :param game: The game object representing the environment.
+        :return: The probability matrix for the next sample.
+        """
 
         # Update utility matrices and potentials
         self.update_us(game)
@@ -71,11 +88,21 @@ class optimistic_solver():
         return phi
 
 class nash_ucb():
-    def __init__(self,game,iterations):
+    """
+    Nash UCB class for learning in congestion games with bandit feedback.
+    """
+    def __init__(self,game,c,iterations):
+        """
+        Initialize the nash_ucb class.
+
+        :param game: The game object representing the environment.
+        :param c: The exploration-exploitation trade-off constant.
+        :param iterations: The number of iterations to run the algorithm.
+        """
 
         self.number_agents = game.number_agents
         self.number_facilities = game.number_facilities
-        delta = 0.01
+        delta = c
         self.const = iterations/delta
         self.facility_counter = np.zeros(self.number_facilities)
         self.iota = 2*np.log(4*(self.number_agents + 1)*self.const)
@@ -83,7 +110,7 @@ class nash_ucb():
         self.theta_k = np.zeros(self.d)
         self.V_k = np.eye(self.d)
         self.ar_sum = np.zeros(self.d)
-        self.epsilon = 0.01
+        self.epsilon = 0.001
 
         num_range = np.arange(self.number_facilities)
         actions = []
@@ -96,12 +123,7 @@ class nash_ucb():
         self.t = 0
 
     def a_i_function(self, i: int, ja_tuple: tuple) -> list:
-        """
-        Calculates A_i(a) function. See section 4.2 in 'Learning in Congestion Games with Bandit Feedback'
-        :param i: agent index
-        :param ja_tuple: joint action tuple
-        :return: A_i(a). A 0-1 vector of length n*k
-        """
+
         vector = np.zeros(self.d)
 
         n_f = self.calculate_n_f(ja_tuple)
@@ -118,11 +140,7 @@ class nash_ucb():
         return tuples
 
     def calculate_n_f(self, ja_tuple: tuple) -> list:
-        """
-        Calculates n^f(a) function. Return number of agents visiting each facility.
-        :param ja_tuple: tuple representing a joitn action
-        :return: list with a value for each facility.
-        """
+
         n_f = np.zeros(self.number_facilities)
         for agent_action in list(ja_tuple):
             facilities = list(self.action_space[agent_action])
@@ -131,11 +149,7 @@ class nash_ucb():
         return n_f
 
     def update_vk(self, action_chosen):
-        """
 
-        :param action_chosen: Joint action chosen
-        :return: Updated V_k matrix
-        """
         sum_matrices = 0
 
         for agent in range(self.number_agents):
@@ -146,12 +160,7 @@ class nash_ucb():
         return self.V_k + sum_matrices
 
     def update_theta_k(self, action_chosen, rewards):
-        """
-        Iteratively updates theta_k through the ar_sum value.
-        :param action_chosen: previous joint action chosen.
-        :param rewards: reward received by each agent.
-        :return: Updated theta_k matrix
-        """
+
         sum_ar = 0
         for agent in range(self.number_agents):
             a_i = self.a_i_function(agent, action_chosen)
@@ -233,6 +242,12 @@ class nash_ucb():
         return phi
 
     def next_sample_prob(self, Game):
+        """
+        Calculate the probabilities for the next sample.
+
+        :param Game: The game object representing the environment.
+        :return: The probability matrix for the next sample.
+        """
         self.t = Game.t
         previous_action = Game.actions_chosen[-1]
         previous_reward = Game.agent_rewards[-1]
@@ -242,7 +257,16 @@ class nash_ucb():
         return self.solve_potential_game(reward_matrices)
 
 class exponential_weights_annealing():
-    def __init__(self,game,beta=0.75):
+    """
+    Exponential Weights Annealing class for online learning.
+    """
+    def __init__(self,game,beta):
+        """
+        Initialize the exponential_weights_annealing class.
+
+        :param game: The game object representing the environment.
+        :param beta: The learning rate parameter.
+        """
 
         self.n = game.n
         self.k = game.k
@@ -257,13 +281,19 @@ class exponential_weights_annealing():
         self.epsilon = 0
 
     def next_sample_prob(self, game):
+        """
+        Calculate the probabilities for the next sample.
+
+        :param game: The game object representing the environment.
+        :return: The probability matrix for the next sample.
+        """
         self.t += 1
 
         if self.t != 2:
             self.update_ys(game)
 
         #self.epsilon = (1 / self.t) ** ((self.beta-1)/2)
-        self.epsilon = np.sqrt(0.5 * self.step_size)
+        self.epsilon = 2/self.t
 
         for i in range(self.k):
             self.Xs[i] = self.epsilon*(np.ones(self.n)/self.n) + (1-self.epsilon)*self.logit_choice_map(self.Ys[i])
@@ -289,62 +319,19 @@ class exponential_weights_annealing():
 
         return np.exp(vector)/sum_exp
 
-class exponential_weights_annealing_new():
-    def __init__(self,game,beta=0.75):
-
-        self.n = game.n
-        self.k = game.k
-        self.beta = beta
-
-        self.t = 1
-        self.number_samples = 0
-        self.diff = []
-        self.Ys = [np.ones(self.n)/self.n for k in range(self.k)]
-        self.Xs = [np.ones(self.n)/self.n for k in range(self.k)]
-        self.step_size = 0
-        self.epsilon = 0
-
-        self.current_player = 0
-        self.current_policy = tuple([int(0) for i in range(self.k)])
-
-    def next_sample_prob(self, game):
-
-        if self.t != 1:
-            self.update_ys(game)
-
-        self.current_player += 1
-
-        if self.current_player == self.k:
-            self.current_player = 0
-            self.t += 1
-
-        #self.epsilon = (1 / self.t) ** ((self.beta-1)/2)
-        self.epsilon = np.sqrt(0.5 * self.step_size)
-
-        self.Xs[self.current_player] = self.epsilon*(np.ones(self.n)/self.n) + (1-self.epsilon)*self.logit_choice_map(self.Ys[self.current_player])
-
-        phi = np.zeros(game.shape)
-        for n in range(self.n):
-            current_policy_list = list(self.current_policy)
-            current_policy_list[self.current_player] = int(n)
-            tuple_ = tuple(current_policy_list)
-            phi[tuple_] = self.Xs[self.current_player][n]
-        return phi
-    def update_ys(self,game):
-
-        self.step_size = (1/self.t)**self.beta
-        alpha_i = game.actions[-1][self.current_player]
-        self.Ys[self.current_player][alpha_i] += self.step_size*game.rewards[-1][self.current_player]/self.Xs[self.current_player][alpha_i]
-
-    def logit_choice_map(self,vector):
-
-        sum_exp = np.sum(np.exp(vector))
-
-        return np.exp(vector)/sum_exp
-
 class nash_ca():
+    """
+    Nash co-ordinate ascent class for learning in games.
+    """
 
-    def __init__(self,game,c):
+    def __init__(self,game,c,thresh):
+        """
+        Initialize the nash_ca class.
+
+        :param game: The game object representing the environment.
+        :param c: The exploration-exploitation trade-off constant.
+        :param thresh: The threshold for looping through the current policy.
+        """
 
         self.n = game.n
         self.k = game.k
@@ -357,7 +344,7 @@ class nash_ca():
         self.current_policy = tuple([int(0) for i in range(self.k)])
         self.subroutine = False
         self.subroutine_episode_counter = 0
-        self.thresh = 5
+        self.thresh = thresh
         self.deltas = np.zeros(self.k)
         self.a_hat = np.zeros(self.k)
         self.temp_episode_counter = 0
@@ -365,6 +352,12 @@ class nash_ca():
         self.means = [np.zeros(shape) for i in range(self.k)]
         self.t = 0
     def next_sample_prob(self,game):
+        """
+        Calculate the probabilities for the next sample.
+
+        :param game: The game object representing the environment.
+        :return: The probability matrix for the next sample.
+        """
 
         if self.t > 0:
             self.update_means(game)
@@ -465,13 +458,11 @@ class nash_ca():
         phi = np.zeros([self.n] * self.k)
         phi[tuple(current_policy_list)] = 1
 
-        if game.t > 1000:
-            print('yo')
         return phi
 
     def update_means(self,game):
 
-        last_action = game.actions[-1]
+        last_action = game.actions_chosen[-1]
 
         for p in range(self.k):
             self.means[p][last_action] = game.sum[p][last_action]/game.number[last_action]
