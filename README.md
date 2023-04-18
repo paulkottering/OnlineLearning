@@ -42,3 +42,9 @@ To run an experiment with 5 strategies per player, 4 players, 1000 iterations, a
 ````
 python multi_runner.py -n 5 -k 4 -t 1000 -nl 0.2 -s optimistic
 ````
+
+The compare_plot script allows users to compare the cumulative regret of different simulation runs based on a varying parameter. 
+The script takes as input fixed parameters and a varying parameter. 
+It then filters the logs based on the fixed parameters and aggregates the cumulative regret of the remaining logs for each value of the varying parameter. 
+Finally, the script generates a plot that shows the cumulative regret for each value of the varying parameter, with confidence intervals of one standard deviation, and lists the fixed parameter values on the right of the plot. 
+The plot is saved in a folder called compare_figures. Users can also specify the width of the confidence intervals.

@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import random as rand
-from utils.updates import opt_pes_recalc, opt_pes_recalc_make
+from utils.updates import opt_pes_recalc, opt_pes_make
 import itertools
 
 class optimistic_solver():
