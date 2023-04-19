@@ -10,27 +10,27 @@ def parse_args():
     """
     parser = argparse.ArgumentParser()
     # Set up arguments
-    parser.add_argument("-v", "--varying", default="dimension", type=str,
+    parser.add_argument("-v", "--varying", default="solver", type=str,
                         help='varying parameter')
-    parser.add_argument("-n", "--dimension", default=5, type=int,
+    parser.add_argument("-n", "--dimension", default=8, type=int,
                         help='Number of Strategies for each player')
     parser.add_argument("-k", "--players", default=2, type=int,
                         help='Number of Players')
-    parser.add_argument("-t", "--timesteps", default=200, type=int,
+    parser.add_argument("-t", "--timesteps", default=1000, type=int,
                         help='Number of timesteps')
-    parser.add_argument("-r", "--runs", default=3, type=int,
+    parser.add_argument("-r", "--runs", default=10, type=int,
                         help='Number of Runs')
     parser.add_argument("-e", "--regret", default="nash", type=str,
                         help='Type of Regret')
-    parser.add_argument("-nl", "--noise", default=0.3, type=float,
+    parser.add_argument("-nl", "--noise", default=0.1, type=float,
                         help='Noise Level')
     parser.add_argument("-c", "--constant", default=0.2, type=float,
                         help='Constant')
-    parser.add_argument("-a", "--alpha", default=0.1, type=float,
+    parser.add_argument("-a", "--alpha", default=0.5, type=float,
                         help='Alpha')
     parser.add_argument("-g", "--game", default="random", type=str,
                         help='Game Type')
-    parser.add_argument("-s", "--solver", default="nash_ca", type=str,
+    parser.add_argument("-s", "--solver", default="optimistic", type=str,
                         help='Which solver to use')
 
     return parser.parse_args()
@@ -62,12 +62,12 @@ def filter_logs_by_parameters(log_files, fixed_parameters, varying_parameter):
 
     return filtered_logs
 
-def plot_cumulative_regrets(filtered_logs, varying_parameter,fixed_parameters, std_width=1):
+def plot_cumulative_regrets(filtered_logs, varying_parameter,fixed_parameters,regret, std_width=1):
     plt.figure()
 
     for varying_value, logs in filtered_logs.items():
         for log in logs:
-            all_regrets = np.cumsum(log["regrets"], axis=1)
+            all_regrets = np.cumsum(log[regret], axis=1)
             mean_regrets = np.mean(all_regrets, axis=0)
             std_regrets = np.std(all_regrets, axis=0)
             plt.plot(mean_regrets, label="{}={}".format(varying_parameter, varying_value))
@@ -76,7 +76,7 @@ def plot_cumulative_regrets(filtered_logs, varying_parameter,fixed_parameters, s
 
     plt.xlabel("Timesteps")
     plt.ylabel("Cumulative Regret")
-    plt.title("Cumulative Regret Comparison ({})".format(varying_parameter))
+    plt.title("Cumulative {} Regret Comparison ({})".format(regret, varying_parameter))
 
     # add legend outside plot on right
     plt.legend(bbox_to_anchor=(1.02, 1), loc="upper left")
@@ -103,15 +103,14 @@ def main(**kwargs):
         "alpha": kwargs.get("alpha"),
         "game": kwargs.get("game"),
         "solver": kwargs.get("solver"),
-        "regret": kwargs.get("regret"),
         "dimension": kwargs.get("dimension")
     }
 
     varying_parameter = kwargs.get("varying")
-
+    regret = "nash"
     log_files = read_simulation_log_files()
     filtered_logs = filter_logs_by_parameters(log_files, fixed_parameters, varying_parameter)
-    plot_cumulative_regrets(filtered_logs, varying_parameter,fixed_parameters)
+    plot_cumulative_regrets(filtered_logs, varying_parameter,fixed_parameters,regret)
 
 
 if __name__ == "__main__":

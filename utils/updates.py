@@ -69,6 +69,63 @@ def opt_pes_recalc(matrices,opt_us,pes_us,n,k):
 
     return opt_phi, pes_phi
 
+def opt_pes_recalc2(matrices,opt_us,pes_us,n,k):
+    """
+    Calculate optimistic and pessimistic estimates based on pre-calculated weight matrices.
+
+    Args:
+    matrices (list): Pre-calculated weight matrices
+    opt_us (array): Optimistic utilities
+    pes_us (array): Pessimistic utilities
+    n (int): Number of actions for each agent
+    k (int): Number of agents
+
+    Returns:
+    tuple: Optimistic and pessimistic estimates
+    """
+
+    # Initialize arrays
+    shape = [n] * k
+    opt_phi = np.zeros(shape)
+    pes_phi = np.zeros(shape)
+    opt_phi_max = np.zeros(shape)
+    pes_phi_min = np.zeros(shape)
+
+    # Generate index tuples
+    tuples = list(np.indices(shape).reshape(k, -1).T)
+
+    # Iterate through combinations
+    for i in range(k):
+        combo_list = list(combinations(np.arange(k), i))
+        for l in range(len(combo_list)):
+
+            # Initialize optimistic and pessimistic estimates
+            opt = np.ones(shape)*float(np.inf)
+            pes = np.ones(shape)*float(-np.inf)
+
+            opt_max = np.ones(shape)*float(-np.inf)
+            pes_min = np.ones(shape)*float(np.inf)
+
+            # Get inactive agents list
+            inactive = combo_list[l]
+
+            # Iterate through active agents
+            utility_index = [i for i in range(k) if i not in inactive][0]
+            opt_y = np.zeros(shape)
+            pes_y = np.zeros(shape)
+
+            # Calculate optimistic and pessimistic estimates for each agent
+            for t in range(len(tuples)):
+                tuple_ = tuples[t]
+                opt_y[tuple(tuple_)] = np.sum(np.multiply(matrices[i][l][t][0],opt_us[utility_index])) + np.sum(np.multiply(matrices[i][l][t][2],pes_us[utility_index]))
+                pes_y[tuple(tuple_)] = np.sum(np.multiply(matrices[i][l][t][3],opt_us[utility_index])) + np.sum(np.multiply(matrices[i][l][t][1],pes_us[utility_index]))
+
+            # Update summation of components
+            opt_phi += opt_y
+            pes_phi += opt_y
+
+    return opt_phi, pes_phi
+
 def opt_pes_make(n,k):
     """
     Make and store matrices for calculating optimistic and pessimistic potential estimates. For all possible combinations.
@@ -95,6 +152,7 @@ def opt_pes_make(n,k):
         ks.append(ls)
 
     return ks
+
 
 def opt_pes_mat_make(n, k, inactive):
     """

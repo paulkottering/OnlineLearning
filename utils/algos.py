@@ -1,91 +1,7 @@
 import numpy as np
 from numpy import random as rand
-from utils.updates import opt_pes_recalc, opt_pes_make
+from utils.updates import opt_pes_recalc, opt_pes_make,opt_pes_recalc2
 import itertools
-
-class optimistic_solver():
-    """
-    custom optimistic solver algorithm class.
-    """
-    def __init__(self, game, c, alpha):
-        """
-        Initialize the optimistic_solver class.
-
-        :param game: The game object representing the game to solve.
-        :param c: The exploration-exploitation trade-off constant.
-        :param alpha: The random probability threshold for exploration.
-        """
-
-        self.n = game.n
-        self.k = game.k
-        self.c = c
-
-        shape = [self.n] * self.k
-        self.alpha = alpha
-        # Calculate and store the optimization and pessimistic matrices
-        self.matrices = opt_pes_recalc_make(self.n, self.k)
-
-        # Initialize number of samples and differences
-        self.number_samples = 0
-
-        # Initialize optimistic and pessimistic utility matrices
-        self.OptUs = [np.ones([self.n] * self.k) * game.MaxU for i in range(self.k)]
-        self.PesUs = [np.ones([self.n] * self.k) * game.MinU for i in range(self.k)]
-
-    def update_us(self, game):
-        """
-        Update the optimistic and pessimistic utility matrices.
-
-        :param game: The game object representing the game to solve.
-        """
-        shape = [self.n] * self.k
-        tuples = list(itertools.product(*[range(dim) for dim in shape]))
-
-        for p in range(self.k):
-            for tuple_ in tuples:
-                # Calculate the optimistic and pessimistic means
-                opt_mean = game.sum[p][tuple_] / game.number[tuple_] if game.number[tuple_] > 0 else game.MaxU
-                pes_mean = game.sum[p][tuple_] / game.number[tuple_] if game.number[tuple_] > 0 else game.MinU
-
-                number = 1 if game.number[tuple_] == 0 else game.number[tuple_]
-
-                # Update the optimistic and pessimistic utility matrices with UCB and LCB respectively
-                self.OptUs[p][tuple_] = opt_mean + self.c * np.sqrt(np.log(game.t) / number)
-                self.PesUs[p][tuple_] = pes_mean - self.c * np.sqrt(np.log(game.t) / number)
-
-    def update_potential(self):
-        """
-        Update the optimistic and pessimistic potential matrices.
-        """
-        self.OptPhi, self.PesPhi = opt_pes_recalc(self.matrices, self.OptUs, self.PesUs, self.n, self.k)
-
-    def next_sample_prob(self, game):
-        """
-        Calculate the probabilities for the next sample.
-
-        :param game: The game object representing the environment.
-        :return: The probability matrix for the next sample.
-        """
-
-        # Update utility matrices and potentials
-        self.update_us(game)
-        self.update_potential()
-
-        # Find the tuple with the maximum optimistic potential
-        max_tuple = np.unravel_index(np.argmax(self.OptPhi), self.OptPhi.shape)
-        phi = np.zeros([self.n] * self.k)
-        phi[max_tuple] = 1
-
-        # Explore other sample with random probability
-        a = np.random.rand(1)
-
-        if a < self.alpha:
-            phi_2 = np.copy(self.OptPhi)
-            phi_2 = phi_2 - np.min(self.OptPhi)
-            phi_2 /= np.sum(phi_2)
-            phi = np.copy(phi_2)
-
-        return phi
 
 class nash_ucb():
     """
@@ -466,3 +382,86 @@ class nash_ca():
 
         for p in range(self.k):
             self.means[p][last_action] = game.sum[p][last_action]/game.number[last_action]
+
+class optimistic_solver():
+    """
+    custom optimistic solver algorithm class.
+    """
+    def __init__(self, game, c, alpha):
+        """
+        Initialize the optimistic_solver class.
+
+        :param game: The game object representing the game to solve.
+        :param c: The exploration-exploitation trade-off constant.
+        :param alpha: The random probability threshold for exploration.
+        """
+
+        self.n = game.n
+        self.k = game.k
+        self.c = c
+
+        shape = [self.n] * self.k
+        self.alpha = alpha
+        # Calculate and store the optimization and pessimistic matrices
+        self.matrices = opt_pes_make(self.n, self.k)
+
+        # Initialize number of samples and differences
+        self.number_samples = 0
+
+        # Initialize optimistic and pessimistic utility matrices
+        self.OptUs = [np.ones([self.n] * self.k) * game.MaxU for i in range(self.k)]
+        self.PesUs = [np.ones([self.n] * self.k) * game.MinU for i in range(self.k)]
+
+    def update_us(self, game):
+        """
+        Update the optimistic and pessimistic utility matrices.
+
+        :param game: The game object representing the game to solve.
+        """
+        shape = [self.n] * self.k
+        tuples = list(itertools.product(*[range(dim) for dim in shape]))
+
+        for p in range(self.k):
+            for tuple_ in tuples:
+                # Calculate the optimistic and pessimistic means
+                opt_mean = game.sum[p][tuple_] / game.number[tuple_] if game.number[tuple_] > 0 else game.MaxU
+                pes_mean = game.sum[p][tuple_] / game.number[tuple_] if game.number[tuple_] > 0 else game.MinU
+
+                number = 1 if game.number[tuple_] == 0 else game.number[tuple_]
+
+                # Update the optimistic and pessimistic utility matrices with UCB and LCB respectively
+                self.OptUs[p][tuple_] = opt_mean + self.c * np.sqrt(np.log(game.t) / number)
+                self.PesUs[p][tuple_] = pes_mean - self.c * np.sqrt(np.log(game.t) / number)
+
+    def update_potential(self):
+        """
+        Update the optimistic and pessimistic potential matrices.
+        """
+        self.OptPhi, self.PesPhi = opt_pes_recalc(self.matrices, self.OptUs, self.PesUs, self.n, self.k)
+
+    def next_sample_prob(self, game):
+        """
+        Calculate the probabilities for the next sample.
+
+        :param game: The game object representing the environment.
+        :return: The probability matrix for the next sample.
+        """
+
+        # Update utility matrices and potentials
+        self.update_us(game)
+        self.update_potential()
+
+        # Find the tuple with the maximum optimistic potential
+        max_tuple = np.unravel_index(np.argmax(self.OptPhi), self.OptPhi.shape)
+        phi = np.zeros([self.n] * self.k)
+        phi[max_tuple] = 1
+
+        # Explore other sample with random probability
+        a = np.random.rand(1)
+        alpha = 0.1*np.exp(np.log(self.alpha)*game.t/(self.n**self.k))
+        if (a < alpha) and (game.t > 1):
+            phi_2 = np.copy(self.OptPhi)
+            phi_2 = phi_2 - np.min(self.OptPhi)
+            phi_2 /= np.sum(phi_2)
+            phi = np.copy(phi_2)
+        return phi

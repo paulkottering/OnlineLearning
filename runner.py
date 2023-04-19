@@ -58,7 +58,7 @@ def save_simulation_results(filename, kwargs, regrets, av_regret_val):
         filename (str): Filename for the JSON file.
         kwargs (dict): Dictionary of parameters.
         regrets (list): List of regrets for each run.
-        av_regret_val (float): Average regret value.
+        av_regret_val (list): Average regret value.
 
     Returns:
         None
@@ -66,8 +66,12 @@ def save_simulation_results(filename, kwargs, regrets, av_regret_val):
     # Create a dictionary to store the results and parameters
     data = {
         "parameters": kwargs,
-        "regrets": regrets,
-        "average_regret": av_regret_val
+        "nash": regrets[0],
+        "potential": regrets[1],
+        "nikaido_isoda": regrets[2],
+        "ne_average_regret": av_regret_val[0],
+        "ni_average_regret": av_regret_val[1],
+        "p_average_regret": av_regret_val[2]
     }
 
     # Save the data to a JSON file
@@ -88,17 +92,15 @@ def parse_args():
                         help='Number of timesteps')
     parser.add_argument("-r", "--runs", default=1, type=int,
                         help='Number of Runs')
-    parser.add_argument("-e", "--regret", default="nash", type=str,
-                        help='Type of Regret')
-    parser.add_argument("-nl", "--noise", default=0, type=float,
+    parser.add_argument("-nl", "--noise", default=0.3, type=float,
                         help='Noise Level')
     parser.add_argument("-c", "--constant", default=0.1, type=float,
                         help='Constant')
     parser.add_argument("-a", "--alpha", default=0.1, type=float,
                         help='Alpha')
-    parser.add_argument("-g", "--game", default="congestion", type=str,
+    parser.add_argument("-g", "--game", default="random", type=str,
                         help='Game Type')
-    parser.add_argument("-s", "--solver", default="nash_ca", type=str,
+    parser.add_argument("-s", "--solver", default="optimistic", type=str,
                         help='Which solver to use')
 
     return parser.parse_args()
@@ -117,7 +119,6 @@ def main(**kwargs):
         alpha (float): Alpha parameter.
         game (str): Game type (e.g. "congestion" or "random").
         solver (str): Solver to use (e.g. "nash_ca" or "nash_ucb").
-        regret (str): Type of regret (e.g. "nash" or "potential").
 
     Returns:
         None
@@ -133,39 +134,42 @@ def main(**kwargs):
     alpha = kwargs.get("alpha")
     g = kwargs.get("game")
     s = kwargs.get("solver")
-    e = kwargs.get("regret")
 
     iterations = t_max
 
-    regrets = []
-    cumulative_regrets = []
+    regrets = [[],[],[]]
 
     # Iterate through the specified number of runs
     for r in range(runs):
         print(r)
-        regrets.append([])
-        cumulative_regrets.append([])
+        regrets[0].append([])
+        regrets[1].append([])
+        regrets[2].append([])
+
 
         # Initialize the game and solver based on the provided game type and solver type
-        if g == "random":
+        if g == "random" or g == "skewed":
             Potential, unknown_utilitys = make_game(g, n, k)
             Game = potential_game(Potential, unknown_utilitys,nl)
-        if g == "congestion":
+        elif g == "congestion":
             number_facilities, number_agents, facility_means = make_game(g, n, k)
             Game = congestion_game(facility_means,number_agents,nl)
+        else:
+            raise RuntimeError("Not a valid game!")
 
         if s == "optimistic":
             algorithm = optimistic_solver(Game,c, alpha)
-        if s == "nash_ucb":
+        elif s == "nash_ucb":
             algorithm = nash_ucb(Game,c,iterations)
-        if s == "exp_weight":
-            algorithm = exponential_weights_annealing(Game,0.75)
-        if s == "nash_ca":
-            algorithm = nash_ca(Game, c,20)
+        elif s == "exp_weight":
+            algorithm = exponential_weights_annealing(Game,c)
+        elif s == "nash_ca":
+            algorithm = nash_ca(Game, c,10)
+        else:
+            raise RuntimeError("Not a valid algorithm!")
 
         # Instantiate a regret object and initialize cumulative regret
         reg = regret(Game)
-        cumulative_regret = 0
 
         # Run the simulation for the specified number of iterations
         for t in range(iterations):
@@ -181,26 +185,22 @@ def main(**kwargs):
             Game.sample(tuple(sample_tuple))
 
             #Calculate regret and append lists
-            regrets[r].append(reg.regrets(e,prob))
-            cumulative_regret += regrets[r][t]
-            cumulative_regrets[r].append(cumulative_regret)
+            regrets[0][r].append(reg.regrets("nash",prob))
+            regrets[1][r].append(reg.regrets("potential",prob))
+            regrets[2][r].append(reg.regrets("nikaido_isoda",prob))
 
             #Output log
-            print("______")
-            print(t)
-            print("Sample: ", sample_tuple)
-            print("Regret: ", regrets[r][t])
-            print("Cumulative Regret: ", cumulative_regret)
+            # print("______")
+            # print(t)
+            # print("Sample: ", sample_tuple)
+            # print("Regret: ", regrets[r][t])
+            # print("Cumulative Regret: ", cumulative_regret)
 
-    av_regret_val = reg.av_regret(e)
+    av_regret_vals = reg.av_regret()
 
     filename, timestamp = generate_filename()
-    save_simulation_results(filename, kwargs, regrets, av_regret_val)
+    save_simulation_results(filename, kwargs, regrets, av_regret_vals)
     update_log_file(timestamp, kwargs)
-
-    # Plot cumulative regrets
-    plot_many(kwargs, np.array(cumulative_regrets),av_regret_val)
-
 
 if __name__ == "__main__":
     """

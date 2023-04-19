@@ -28,13 +28,8 @@ class regret():
             self.potential_regret_matrix[tuple] = potential_regret(game, tuple)
             self.ni_regret_matrix[tuple] = nikaido_isoda_regret(game, tuple)
 
-    def av_regret(self,e):
-        if e == "nash":
-            return np.mean(self.nash_regret_matrix)
-        if e == "potential":
-            return np.mean(self.potential_regret_matrix)
-        if e == "nikaido_isoda":
-            return np.mean(self.ni_regret_matrix)
+    def av_regret(self):
+            return [ np.mean(self.nash_regret_matrix),np.mean(self.potential_regret_matrix),np.mean(self.ni_regret_matrix)]
 
     def regrets(self,e,prob):
         if e == "nash":
