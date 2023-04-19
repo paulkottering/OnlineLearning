@@ -13,7 +13,7 @@ def parse_args():
                         help='Number of Players')
     parser.add_argument("-t", "--timesteps", default=1000, type=int,
                         help='Number of timesteps')
-    parser.add_argument("-r", "--runs", default=10, type=int,
+    parser.add_argument("-r", "--runs", default=20, type=int,
                         help='Number of Runs')
     parser.add_argument("-nl", "--noise", default=0.1, type=float,
                         help='Noise Level')

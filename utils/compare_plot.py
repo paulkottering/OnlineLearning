@@ -28,7 +28,7 @@ def parse_args():
                         help='Constant')
     parser.add_argument("-a", "--alpha", default=0.5, type=float,
                         help='Alpha')
-    parser.add_argument("-g", "--game", default="random", type=str,
+    parser.add_argument("-g", "--game", default="skewed", type=str,
                         help='Game Type')
     parser.add_argument("-s", "--solver", default="optimistic", type=str,
                         help='Which solver to use')

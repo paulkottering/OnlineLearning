@@ -40,7 +40,7 @@ The repository supports various algorithms for learning in games. The following 
 To run an experiment with 5 strategies per player, 4 players, 1000 iterations, a Gaussian noise standard deviation of 0.2, and using the Optimistic Decomposition solver, you would execute the following command:
 
 ````
-python multi_runner.py -n 5 -k 4 -t 1000 -nl 0.2 -s optimistic
+python runner.py -n 5 -k 4 -t 1000 -nl 0.2 -s optimistic
 ````
 
 The compare_plot script allows users to compare the cumulative regret of different simulation runs based on a varying parameter. 
