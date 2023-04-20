@@ -29,9 +29,9 @@ The repository supports various algorithms for learning in games. The following 
 | Full Name                          | solver name  | Hyperparameters                              |                                                        Paper                                                        |
 |:-----------------------------------|:-------------|:---------------------------------------------|:-------------------------------------------------------------------------------------------------------------------:|
 | Nash - UCB II                      | `nash_ucb`   | c (UCB constant)                             |                       Cui, Qiwen et al. “Learning in Congestion Games with Bandit Feedback.”                        |
-| NASH-CA                            | `nash_ca`    | c (UCB constant)  , N  (Threshold)                            | Song, Ziang et al. “When Can We Learn General-Sum Markov Games with a Large Number of Players Sample-Efficiently?”  |
+| NASH-CA                            | `nash_ca`    | c (UCB constant)  , alpha  (Threshold)       | Song, Ziang et al. “When Can We Learn General-Sum Markov Games with a Large Number of Players Sample-Efficiently?”  |
 | Optimistic Decomposition           | `optimistic` | c (UCB constant) , alpha  (greedy parameter) |                                                  Custom algorithm.                                                  |
-| Exponential Weights with Annealing | `exp_weight` | c (UCB constant)            |                      Héliou, Amélie et al. “Learning with Bandit Feedback in Potential Games.”                      |
+| Exponential Weights with Annealing | `exp_weight` | c (UCB constant)                             |                      Héliou, Amélie et al. “Learning with Bandit Feedback in Potential Games.”                      |
 
 
 ## Example 

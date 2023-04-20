@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import random as rand
-from utils.updates import opt_pes_recalc, opt_pes_make,opt_pes_recalc2
+from utils.updates import opt_pes_recalc
 import itertools
 
 class nash_ucb():
@@ -176,7 +176,7 @@ class exponential_weights_annealing():
     """
     Exponential Weights Annealing class for online learning.
     """
-    def __init__(self,game,beta):
+    def __init__(self,game,beta,alpha):
         """
         Initialize the exponential_weights_annealing class.
 
@@ -187,6 +187,7 @@ class exponential_weights_annealing():
         self.n = game.n
         self.k = game.k
         self.beta = beta
+        self.alpha = alpha
 
         self.t = 1
         self.number_samples = 0
@@ -208,8 +209,7 @@ class exponential_weights_annealing():
         if self.t != 2:
             self.update_ys(game)
 
-        #self.epsilon = (1 / self.t) ** ((self.beta-1)/2)
-        self.epsilon = 2/self.t
+        self.epsilon = (1 / self.t) ** (self.alpha)
 
         for i in range(self.k):
             self.Xs[i] = self.epsilon*(np.ones(self.n)/self.n) + (1-self.epsilon)*self.logit_choice_map(self.Ys[i])
@@ -225,7 +225,7 @@ class exponential_weights_annealing():
         self.step_size = (1/self.t)**self.beta
 
         for i in range(self.k):
-            alpha_i = game.actions[-1][i]
+            alpha_i = game.actions_chosen[-1][i]
 
             self.Ys[i][alpha_i] += self.step_size*game.rewards[-1][i]/self.Xs[i][alpha_i]
 
@@ -344,18 +344,6 @@ class nash_ca():
 
         return np.argmax(self.means[current_agent][slices])
 
-    def sub_routine(self):
-        current_policy = self.current_policy
-        current_agent = self.current_player
-
-        random_action = np.random.randint(0,self.n)
-        current_policy_list = list(current_policy)
-        current_policy_list[current_agent] = random_action
-
-        phi = np.zeros([self.n] * self.k)
-        phi[tuple(current_policy_list)] = 1
-        return phi
-
     def ucb_sub_routine(self,game):
         current_policy = self.current_policy
         current_agent = self.current_player
@@ -387,7 +375,7 @@ class optimistic_solver():
     """
     custom optimistic solver algorithm class.
     """
-    def __init__(self, game, c, alpha):
+    def __init__(self, game, c, alpha, matrices):
         """
         Initialize the optimistic_solver class.
 
@@ -403,7 +391,7 @@ class optimistic_solver():
         shape = [self.n] * self.k
         self.alpha = alpha
         # Calculate and store the optimization and pessimistic matrices
-        self.matrices = opt_pes_make(self.n, self.k)
+        self.matrices = matrices
 
         # Initialize number of samples and differences
         self.number_samples = 0

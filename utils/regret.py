@@ -29,7 +29,7 @@ class regret():
             self.ni_regret_matrix[tuple] = nikaido_isoda_regret(game, tuple)
 
     def av_regret(self):
-            return [ np.mean(self.nash_regret_matrix),np.mean(self.potential_regret_matrix),np.mean(self.ni_regret_matrix)]
+            return [np.mean(self.nash_regret_matrix), np.mean(self.potential_regret_matrix),np.mean(self.ni_regret_matrix)]
 
     def regrets(self,e,prob):
         if e == "nash":
@@ -82,7 +82,7 @@ def nikaido_isoda_regret(game,sample_tuple):
     Returns:
         float: The Nikaido-Isoda regret for the given game and action combination.
     """
-    max_ni_regret = -np.inf
+    max_ni_regret = 0
     for p in range(game.k):
         cut_slice = [slice(None) if j == p else int(sample_tuple[j]) for j in range(len(sample_tuple))]
         regret = np.max(game.utility_matrices[p][cut_slice]) - game.utility_matrices[p][sample_tuple]

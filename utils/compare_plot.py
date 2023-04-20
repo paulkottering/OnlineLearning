@@ -12,9 +12,9 @@ def parse_args():
     # Set up arguments
     parser.add_argument("-v", "--varying", default="solver", type=str,
                         help='varying parameter')
-    parser.add_argument("-n", "--dimension", default=8, type=int,
+    parser.add_argument("-n", "--dimension", default=5, type=int,
                         help='Number of Strategies for each player')
-    parser.add_argument("-k", "--players", default=2, type=int,
+    parser.add_argument("-k", "--players", default=3, type=int,
                         help='Number of Players')
     parser.add_argument("-t", "--timesteps", default=1000, type=int,
                         help='Number of timesteps')
@@ -22,7 +22,7 @@ def parse_args():
                         help='Number of Runs')
     parser.add_argument("-e", "--regret", default="nash", type=str,
                         help='Type of Regret')
-    parser.add_argument("-nl", "--noise", default=0.1, type=float,
+    parser.add_argument("-nl", "--noise", default=0.05, type=float,
                         help='Noise Level')
     parser.add_argument("-c", "--constant", default=0.2, type=float,
                         help='Constant')

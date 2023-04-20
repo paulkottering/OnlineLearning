@@ -61,6 +61,21 @@ def make_game(game_type, n, k):
 
         return Potential, unknown_utilitys
 
+    elif game_type == "cooperative":
+        # Create a random potential game with specified dimensions
+        shape = [n] * k
+
+        Potential = rand.beta(1.0, 3.0, shape) / 2 - 0.25
+
+        # Initialize unknown utility matrices for each player
+        unknown_utilitys = [Potential for i in range(k)]
+
+        # Add a constant to each player's unknown utility matrix
+        for p in range(k):
+            unknown_utilitys[p] += 0.25
+
+        return Potential, unknown_utilitys
+
     elif game_type == "congestion":
         # Create a congestion game with specified number of facilities and agents
         number_facilities = n

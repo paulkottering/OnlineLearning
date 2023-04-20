@@ -6,6 +6,7 @@ from utils.plotter import plot_many
 from utils.algos import optimistic_solver,nash_ucb,exponential_weights_annealing,nash_ca
 from utils.regret import regret
 from utils.game_maker import make_game
+from utils.updates import opt_pes_make
 
 import json
 import os
@@ -50,15 +51,16 @@ def update_log_file(timestamp, kwargs):
     with open(log_filename, "a") as f:
         f.write(json.dumps(log_entry) + "\n")
 
-def save_simulation_results(filename, kwargs, regrets, av_regret_val):
+def save_simulation_results(filename, kwargs, regrets, av_regret_val, run_times):
     """
-    Save the regrets and parameters of the simulation to a JSON file.
+    Save the regrets, run times, and parameters of the simulation to a JSON file.
 
     Args:
         filename (str): Filename for the JSON file.
         kwargs (dict): Dictionary of parameters.
         regrets (list): List of regrets for each run.
         av_regret_val (list): Average regret value.
+        run_times (list): List of run times for each simulation run.
 
     Returns:
         None
@@ -71,7 +73,8 @@ def save_simulation_results(filename, kwargs, regrets, av_regret_val):
         "nikaido_isoda": regrets[2],
         "ne_average_regret": av_regret_val[0],
         "ni_average_regret": av_regret_val[1],
-        "p_average_regret": av_regret_val[2]
+        "p_average_regret": av_regret_val[2],
+        "run_times": run_times  # Add run times to the data dictionary
     }
 
     # Save the data to a JSON file
@@ -139,8 +142,15 @@ def main(**kwargs):
 
     regrets = [[],[],[]]
 
+    run_times = []  # Initialize a list to store the run times
+
+    if s == "optimistic":
+        matrices = opt_pes_make(n, k)
+
     # Iterate through the specified number of runs
     for r in range(runs):
+        start_time = time.time()  # Record the start time of the simulation
+
         print(r)
         regrets[0].append([])
         regrets[1].append([])
@@ -148,7 +158,7 @@ def main(**kwargs):
 
 
         # Initialize the game and solver based on the provided game type and solver type
-        if g == "random" or g == "skewed":
+        if g == "random" or g == "skewed" or g == "cooperative":
             Potential, unknown_utilitys = make_game(g, n, k)
             Game = potential_game(Potential, unknown_utilitys,nl)
         elif g == "congestion":
@@ -158,13 +168,13 @@ def main(**kwargs):
             raise RuntimeError("Not a valid game!")
 
         if s == "optimistic":
-            algorithm = optimistic_solver(Game,c, alpha)
+            algorithm = optimistic_solver(Game,c, alpha,matrices)
         elif s == "nash_ucb":
-            algorithm = nash_ucb(Game,c,iterations)
+            algorithm = nash_ucb(Game, c, iterations)
         elif s == "exp_weight":
-            algorithm = exponential_weights_annealing(Game,c)
+            algorithm = exponential_weights_annealing(Game, c, alpha)
         elif s == "nash_ca":
-            algorithm = nash_ca(Game, c,10)
+            algorithm = nash_ca(Game, c, alpha*n**k)
         else:
             raise RuntimeError("Not a valid algorithm!")
 
@@ -193,13 +203,16 @@ def main(**kwargs):
             # print("______")
             # print(t)
             # print("Sample: ", sample_tuple)
-            # print("Regret: ", regrets[r][t])
-            # print("Cumulative Regret: ", cumulative_regret)
+            # print("Nash Regret: ", regrets[0][r][t])
+
+        end_time = time.time()  # Record the end time of the simulation
+        run_duration = end_time - start_time  # Calculate the duration of the run
+        run_times.append(run_duration)  # Append the run duration to the run_times list
 
     av_regret_vals = reg.av_regret()
 
     filename, timestamp = generate_filename()
-    save_simulation_results(filename, kwargs, regrets, av_regret_vals)
+    save_simulation_results(filename, kwargs, regrets, av_regret_vals, run_times)  # Pass run_times to the function
     update_log_file(timestamp, kwargs)
 
 if __name__ == "__main__":
