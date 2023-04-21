@@ -7,21 +7,22 @@ import seaborn as sns
 
 def plot_cumulative_regret(changing_parameter, changing_values, fixed_parameters, data_ne, data_p, std_ne, std_p):
     sns.set()
-    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6),sharey=True)
 
     for idx, value in enumerate(changing_values):
         axes[0].plot(data_ne[idx], label=f"{changing_parameter} = {value}")
         axes[1].plot(data_p[idx], label=f"{changing_parameter} = {value}")
 
     axes[0].set_title('Nash Regret')
-    axes[0].set_xlabel('Time steps')
+    axes[0].set_xlabel('Iterations')
     axes[0].set_ylabel('Cumulative Nash Regret')
     axes[0].legend()
 
     axes[1].set_title('Potential Regret')
-    axes[1].set_xlabel('Time steps')
+    axes[1].set_xlabel('Iterations')
     axes[1].set_ylabel('Cumulative Potential Regret')
     axes[1].legend()
+
 
     plt.tight_layout()
 
@@ -52,10 +53,31 @@ def filter_logs_by_1_parameter(log_files, fixed_parameters, varying_parameter, v
         parameters = log["parameters"]
 
         match = all(parameters[k] == fixed_parameters[k] for k in fixed_parameters if k is not varying_parameter)
-        match2 = parameters[varying_parameter] in varying_values
 
-        if match and match2:
+        if parameters["solver"] == "optimistic":
+            match3 = True if parameters["constant"] == 0.1 else False
+            match4 = True if parameters["alpha"] == 0.8 else False
+            match2 = True if parameters["runs"] == 1 else False
+        elif parameters["solver"] == "nash_ca":
+            match3 = True if parameters["constant"] == 0.2 else False
+            match4 = True if parameters["alpha"] == 0.1 else False
+            match2 = True if parameters["runs"] == 1 else False
+        elif parameters["solver"] == "exp_weight":
+            match3 = True if parameters["constant"] == 0.4 else False
+            match4 = True if parameters["alpha"] == 0.5 else False
+            match2 = True if parameters["runs"] == 1 else False
+        elif parameters["solver"] == "nash_ucb":
+            match3 = True if parameters["constant"] == 0.1 else False
+            match4 = True if parameters["alpha"] == 0.8 else False
+            match2 = True if parameters["runs"] == 1 else False
+        else:
+            match3 = False
+            match4 = False
+            match2 = False
+
+        if (match and match2) and (match3 and match4):
             print(match,match2)
+            print(parameters)
             varying_value = parameters[varying_parameter]
 
             if varying_value in filtered_logs:
@@ -101,16 +123,13 @@ def load_data(changing_parameter, fixed_parameters, changing_values):
 
 
 if __name__ == "__main__":
-    varying_parameter = "alpha" # Specify the parameters you want to vary
-    varying_values_choice =  [0.1,0.2,0.5]
+    varying_parameter = "solver" # Specify the parameters you want to vary
+    varying_values_choice =  ["nash_ca","optimistic","exp_weight"]
     fixed_parameters = {
         "dimension": 5,
-        "timesteps": 5000,
-        "runs": 50,
-        "solver": "nash_ca",
-        "noise": 0.05,
-        "players": 3,
-        "constant": 0.2,
+        "timesteps": 2000,
+        "noise": 0.1,
+        "players": 2,
         "game": "random"
     }
     data_ne, data_p, std_ne, std_p = load_data(varying_parameter, fixed_parameters, varying_values_choice)

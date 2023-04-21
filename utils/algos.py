@@ -16,7 +16,7 @@ class nash_ucb():
         :param iterations: The number of iterations to run the algorithm.
         """
 
-        self.number_agents = game.number_agents
+        self.number_agents = game.k
         self.number_facilities = game.number_facilities
         delta = c
         self.const = iterations/delta
@@ -209,7 +209,7 @@ class exponential_weights_annealing():
         if self.t != 2:
             self.update_ys(game)
 
-        self.epsilon = (1 / self.t) ** (self.alpha)
+        self.epsilon = (1 / self.t) ** self.alpha
 
         for i in range(self.k):
             self.Xs[i] = self.epsilon*(np.ones(self.n)/self.n) + (1-self.epsilon)*self.logit_choice_map(self.Ys[i])

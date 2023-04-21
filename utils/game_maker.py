@@ -37,7 +37,7 @@ def make_game(game_type, n, k):
 
         return Potential, unknown_utilitys
 
-    elif game_type == "skewed":
+    elif game_type == "neg_skewed":
         # Create a random potential game with specified dimensions
         shape = [n] * k
 
@@ -61,11 +61,83 @@ def make_game(game_type, n, k):
 
         return Potential, unknown_utilitys
 
+    elif game_type == "pos_skewed":
+        # Create a random potential game with specified dimensions
+        shape = [n] * k
+
+        Potential = rand.beta(3.0, 1.0, shape) / 2 - 0.25
+
+        # Initialize unknown utility matrices for each player
+        unknown_utilitys = [np.zeros(shape) for i in range(k)]
+
+        # Calculate the unknown utility matrices for each player based on the potential function
+        for p in range(k):
+            for i in range(1, n):
+                rel_slice = [slice(None)] * p + [i] + [Ellipsis]
+                prev_slice = [slice(None)] * p + [i - 1] + [Ellipsis]
+
+                unknown_utilitys[p][tuple(rel_slice)] = unknown_utilitys[p][tuple(prev_slice)] + Potential[
+                    tuple(rel_slice)] - Potential[tuple(prev_slice)]
+
+        # Add a constant to each player's unknown utility matrix
+        for p in range(k):
+            unknown_utilitys[p] += 0.25
+
+        return Potential, unknown_utilitys
+
+    elif game_type == "tailed_skewed":
+        # Create a random potential game with specified dimensions
+        shape = [n] * k
+
+        Potential = rand.beta(0.5, 0.5, shape) / 2 - 0.25
+
+        # Initialize unknown utility matrices for each player
+        unknown_utilitys = [np.zeros(shape) for i in range(k)]
+
+        # Calculate the unknown utility matrices for each player based on the potential function
+        for p in range(k):
+            for i in range(1, n):
+                rel_slice = [slice(None)] * p + [i] + [Ellipsis]
+                prev_slice = [slice(None)] * p + [i - 1] + [Ellipsis]
+
+                unknown_utilitys[p][tuple(rel_slice)] = unknown_utilitys[p][tuple(prev_slice)] + Potential[
+                    tuple(rel_slice)] - Potential[tuple(prev_slice)]
+
+        # Add a constant to each player's unknown utility matrix
+        for p in range(k):
+            unknown_utilitys[p] += 0.25
+
+        return Potential, unknown_utilitys
+
+    elif game_type == "mid_skewed":
+        # Create a random potential game with specified dimensions
+        shape = [n] * k
+
+        Potential = rand.beta(5.0, 5.0, shape) / 2 - 0.25
+
+        # Initialize unknown utility matrices for each player
+        unknown_utilitys = [np.zeros(shape) for i in range(k)]
+
+        # Calculate the unknown utility matrices for each player based on the potential function
+        for p in range(k):
+            for i in range(1, n):
+                rel_slice = [slice(None)] * p + [i] + [Ellipsis]
+                prev_slice = [slice(None)] * p + [i - 1] + [Ellipsis]
+
+                unknown_utilitys[p][tuple(rel_slice)] = unknown_utilitys[p][tuple(prev_slice)] + Potential[
+                    tuple(rel_slice)] - Potential[tuple(prev_slice)]
+
+        # Add a constant to each player's unknown utility matrix
+        for p in range(k):
+            unknown_utilitys[p] += 0.25
+
+        return Potential, unknown_utilitys
+
     elif game_type == "cooperative":
         # Create a random potential game with specified dimensions
         shape = [n] * k
 
-        Potential = rand.beta(1.0, 3.0, shape) / 2 - 0.25
+        Potential = rand.randint(-25000, 25001, shape) / 100000
 
         # Initialize unknown utility matrices for each player
         unknown_utilitys = [Potential for i in range(k)]

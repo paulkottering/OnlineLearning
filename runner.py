@@ -158,14 +158,13 @@ def main(**kwargs):
 
 
         # Initialize the game and solver based on the provided game type and solver type
-        if g == "random" or g == "skewed" or g == "cooperative":
-            Potential, unknown_utilitys = make_game(g, n, k)
-            Game = potential_game(Potential, unknown_utilitys,nl)
-        elif g == "congestion":
+        if g == "congestion":
             number_facilities, number_agents, facility_means = make_game(g, n, k)
             Game = congestion_game(facility_means,number_agents,nl)
         else:
-            raise RuntimeError("Not a valid game!")
+            Potential, unknown_utilitys = make_game(g, n, k)
+            Game = potential_game(Potential, unknown_utilitys,nl)
+
 
         if s == "optimistic":
             algorithm = optimistic_solver(Game,c, alpha,matrices)
@@ -183,7 +182,8 @@ def main(**kwargs):
 
         # Run the simulation for the specified number of iterations
         for t in range(iterations):
-
+            if t % 1000 == 0:
+                print(t)
             #Generate probability tensor over all choices
             prob = algorithm.next_sample_prob(Game)
 
