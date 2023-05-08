@@ -2,8 +2,7 @@ import argparse
 import numpy as np
 from game import potential_game, congestion_game
 
-from utils.plotter import plot_many
-from utils.algos import optimistic_solver,nash_ucb,exponential_weights_annealing,nash_ca
+from utils.algos import optimistic_solver,nash_ucb,exponential_weights_annealing,nash_ca,optimistic_solver_2
 from utils.regret import regret
 from utils.game_maker import make_game
 from utils.updates import opt_pes_make
@@ -97,9 +96,9 @@ def parse_args():
                         help='Number of Runs')
     parser.add_argument("-nl", "--noise", default=0.3, type=float,
                         help='Noise Level')
-    parser.add_argument("-c", "--constant", default=0.1, type=float,
+    parser.add_argument("-c", "--constant", default=None, type=float,
                         help='Constant')
-    parser.add_argument("-a", "--alpha", default=0.1, type=float,
+    parser.add_argument("-a", "--alpha", default=None, type=float,
                         help='Alpha')
     parser.add_argument("-g", "--game", default="random", type=str,
                         help='Game Type')
@@ -133,19 +132,31 @@ def main(**kwargs):
     t_max = kwargs.get("timesteps")
     runs = kwargs.get("runs")
     nl = kwargs.get("noise")
-    c = kwargs.get("constant")
-    alpha = kwargs.get("alpha")
     g = kwargs.get("game")
     s = kwargs.get("solver")
+
+    if kwargs.get("constant") is None or kwargs.get("alpha") is None:
+        optimal_hyperparameters = {
+            "nash_ca": {"constant": 0.2, "alpha": 0.1},
+            "optimistic": {"constant": 0.1, "alpha": 0.8},
+            "exp_weight": {"constant": 0.4, "alpha": 0.4},
+            "nash_ucb": {"constant": 0.2, "alpha": 0.8},
+            "optimistic2": {"constant": 0.2, "alpha": 0.8},
+        }
+        if s in optimal_hyperparameters:
+            c = optimal_hyperparameters[s]["constant"]
+            alpha = optimal_hyperparameters[s]["alpha"]
+        else:
+            raise ValueError(f"Unknown solver: {s}")
+    else:
+        c = kwargs.get("constant")
+        alpha = kwargs.get("alpha")
 
     iterations = t_max
 
     regrets = [[],[],[]]
 
     run_times = []  # Initialize a list to store the run times
-
-    if s == "optimistic":
-        matrices = opt_pes_make(n, k)
 
     # Iterate through the specified number of runs
     for r in range(runs):
@@ -158,46 +169,58 @@ def main(**kwargs):
 
 
         # Initialize the game and solver based on the provided game type and solver type
-        if g == "congestion":
-            number_facilities, number_agents, facility_means = make_game(g, n, k)
-            Game = congestion_game(facility_means,number_agents,nl)
+        if g == "congestion" or g == "single_routing" or g == "double_routing":
+            number_facilities, number_agents, facility_means,action_space = make_game(g, n, k)
+            Game = congestion_game(facility_means,number_agents,nl, s,action_space)
+            # Instantiate a regret object and initialize cumulative regret
+            reg = regret(Game,s)
         else:
             Potential, unknown_utilitys = make_game(g, n, k)
             Game = potential_game(Potential, unknown_utilitys,nl)
-
+            # Instantiate a regret object and initialize cumulative regret
+            reg = regret(Game,s)
 
         if s == "optimistic":
-            algorithm = optimistic_solver(Game,c, alpha,matrices)
+            matrices = opt_pes_make(Game.shape)
+            algorithm = optimistic_solver(Game,c, alpha, matrices)
         elif s == "nash_ucb":
             algorithm = nash_ucb(Game, c, iterations)
         elif s == "exp_weight":
             algorithm = exponential_weights_annealing(Game, c, alpha)
         elif s == "nash_ca":
-            algorithm = nash_ca(Game, c, alpha*n**k)
+            algorithm = nash_ca(Game, c, alpha)
         else:
             raise RuntimeError("Not a valid algorithm!")
 
-        # Instantiate a regret object and initialize cumulative regret
-        reg = regret(Game)
-
         # Run the simulation for the specified number of iterations
         for t in range(iterations):
-            if t % 1000 == 0:
+            if t % 100 == 0:
                 print(t)
-            #Generate probability tensor over all choices
-            prob = algorithm.next_sample_prob(Game)
+            if s == "nash_ucb":
+                sample_tuple = algorithm.next_sample_prob(Game)
+                Game.sample(tuple(sample_tuple))
+                three_regret = reg.regret_congestion(Game,sample_tuple)
+                regrets[0][r].append(three_regret[0])
+                regrets[1][r].append(three_regret[1])
+                regrets[2][r].append(three_regret[2])
 
-            #Sample choice from probability tensor
-            choice = np.random.choice(np.arange(prob.size), p=prob.flatten())
-            sample_tuple = np.unravel_index(choice, prob.shape)
+            else:
+                #Generate probability tensor over all choices
+                prob = algorithm.next_sample_prob(Game)
 
-            #Sample this joint action from the game
-            Game.sample(tuple(sample_tuple))
+                #Sample choice from probability tensor
+                choice = np.random.choice(np.arange(prob.size), p=prob.flatten())
+                sample_tuple = np.unravel_index(choice, prob.shape)
+                prob_2 = np.zeros(prob.shape)
+                prob_2[tuple(sample_tuple)] = 1
 
-            #Calculate regret and append lists
-            regrets[0][r].append(reg.regrets("nash",prob))
-            regrets[1][r].append(reg.regrets("potential",prob))
-            regrets[2][r].append(reg.regrets("nikaido_isoda",prob))
+                #Sample this joint action from the game
+                Game.sample(tuple(sample_tuple))
+
+                #Calculate regret and append lists
+                regrets[0][r].append(reg.regrets("nash",prob_2))
+                regrets[1][r].append(reg.regrets("potential",prob_2))
+                regrets[2][r].append(reg.regrets("nikaido_isoda",prob_2))
 
             #Output log
             # print("______")
@@ -209,7 +232,10 @@ def main(**kwargs):
         run_duration = end_time - start_time  # Calculate the duration of the run
         run_times.append(run_duration)  # Append the run duration to the run_times list
 
-    av_regret_vals = reg.av_regret()
+    if g == "congestion" or g == "single_routing" or g == "double_routing":
+        av_regret_vals = [0,0,0]
+    else:
+        av_regret_vals = reg.av_regret()
 
     filename, timestamp = generate_filename()
     save_simulation_results(filename, kwargs, regrets, av_regret_vals, run_times)  # Pass run_times to the function

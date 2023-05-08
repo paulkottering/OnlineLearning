@@ -1,28 +1,27 @@
 import argparse
 from itertools import product
 from runner import main as run_simulation
-from utils.compare_plot import main as plot_comparison
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--varying", nargs='+', default=["noise", "constant"],
+    parser.add_argument("-v", "--varying", nargs='+', default=["players","noise","solver","game"],
                         help='List of parameters to vary')
-    parser.add_argument("-n", "--dimension", default=5, type=int,
+    parser.add_argument("-n", "--dimension", default=2, type=int,
                         help='Number of Strategies for each player')
-    parser.add_argument("-k", "--players", default=2, type=int,
+    parser.add_argument("-k", "--players", default=4, type=int,
                         help='Number of Players')
     parser.add_argument("-t", "--timesteps", default=3000, type=int,
                         help='Number of timesteps')
-    parser.add_argument("-r", "--runs", default=3, type=int,
+    parser.add_argument("-r", "--runs", default=10, type=int,
                         help='Number of Runs')
-    parser.add_argument("-nl", "--noise", default=0.1, type=float,
+    parser.add_argument("-nl", "--noise", default=0.2, type=float,
                         help='Noise Level')
-    parser.add_argument("-c", "--constant", default=0.1, type=float,
+    parser.add_argument("-c", "--constant", default=None, type=float,
                         help='Constant')
-    parser.add_argument("-a", "--alpha", default=0.8, type=float,
+    parser.add_argument("-a", "--alpha", default=None, type=float,
                         help='Alpha')
-    parser.add_argument("-g", "--game", default="congestion", type=str,
+    parser.add_argument("-g", "--game", default="single_routing", type=str,
                         help='Game Type')
     parser.add_argument("-s", "--solver", default="nash_ucb", type=str,
                         help='Which solver to use')
@@ -33,10 +32,10 @@ def main(**kwargs):
     varying_parameters = kwargs.get("varying")
 
     param_values = {
+        "players": [4],
         "noise": [0.1],
-        "constant": [0.1,0.2,0.5,1,10],
-        # Add more parameter options as needed
-    }
+        "solver": ["nash_ucb"],
+        "game": ["double_routing"]}
 
     # Get the varying values for each parameter
     varying_values = [param_values[param] for param in varying_parameters]
@@ -52,4 +51,3 @@ def main(**kwargs):
 if __name__ == "__main__":
     args = vars(parse_args())
     main(**args)
-

@@ -108,7 +108,6 @@ class congestion_game():
         actions_chosen (list): A list to store the chosen actions history.
         t (int): Time step counter.
         actions (list): A list of all possible actions in the extended game.
-        n (int): Number of actions in the extended game.
         k (int): Number of agents in the game.
         shape (list): Shape of the arrays for internal use.
         number (numpy.ndarray): Array for counting the number of times a joint action has been sampled.
@@ -117,7 +116,7 @@ class congestion_game():
         Potential (numpy.ndarray): The potential matrix of the equivalent potential game.
         utility_matrices (list): A list of utility matrices for each agent in the extended game.
         MaxU (int): The maximum utility value in the game.
-        MinU (int): The minimum utility value in the game.
+        MinU (int): The minfsliceimum utility value in the game.
 
     Methods:
         __init__(self, facility_means, number_agents, nl): Initialize the congestion game object with necessary parameters.
@@ -128,12 +127,13 @@ class congestion_game():
     """
 
     # Initialize the congestion game object with necessary parameters
-    def __init__(self,facility_means,number_agents,nl):
+    def __init__(self,facility_means,number_agents,nl,s,action_space=None):
 
         # Store input parameters
         self.number_facilities = len(facility_means)
         self.facility_means = facility_means
         self.nl = nl
+        self.s = s
 
         # Initialize history of agent rewards and actions chosen
         self.agent_rewards = []
@@ -142,39 +142,42 @@ class congestion_game():
         # Initialize time step counter
         self.t = 1
 
-        # Generate all possible actions for the game
-        num_range = np.arange(self.number_facilities)
-        actions = []
-        for combination_length in range(len(num_range) + 1):
-            actions.extend(itertools.combinations(num_range, combination_length))
-
-        # Store the generated actions and their count
-        self.actions = actions
-        self.n = len(actions)
-
         # Set number of players (agents)
         self.k = number_agents
 
-        # Set shape of arrays for internal use
-        self.shape = [self.n] * self.k
+        if action_space is None:
+            # Generate all possible actions for the game
+            num_range = np.arange(self.number_facilities)
+            actions = []
+            for combination_length in range(len(num_range) + 1):
+                actions.extend(itertools.combinations(num_range, combination_length))
+
+            # Store the generated actions and their count
+            self.actions = [actions for i in range(self.k)]
+        else:
+            self.actions = action_space
+
+        self.shape = [len(x) for x in self.actions]
 
         # Initialize counters and accumulators
-        self.number = np.zeros(self.shape)
-        self.sum = [np.zeros(self.shape) for i in range(self.k)]
-        self.sum_squared = [np.zeros(self.shape) for i in range(self.k)]
 
         # Initialize the game with random actions for each agent
-        self.sample(tuple(np.random.randint(1, len(self.actions), size=self.k)))
+        random_list = [np.random.randint(1, len(self.actions[i])) for i in range(self.k)]
 
-        # Calculate the potential and utility matrices for the game
-        self.Potential, self.utility_matrices = self.potential_utilities_for_regret()
+        if self.s != "nash_ucb":
+            self.number = np.zeros(self.shape)
+            self.sum = [np.zeros(self.shape) for i in range(self.k)]
+            self.sum_squared = [np.zeros(self.shape) for i in range(self.k)]
+            # Calculate the potential and utility matrices for the game
+            self.Potential, self.utility_matrices = self.potential_utilities_for_regret()
+            self.check_game()
+
+        self.sample(tuple(random_list))
 
         # Set the maximum and minimum utility values
         self.MaxU = self.number_facilities
         self.MinU = 0
 
-        # Validate if the game is a potential game
-        self.check_game()
 
     def sample(self,action_chosen):
         # Increment time step counter
@@ -184,26 +187,26 @@ class congestion_game():
         numbers = self.number_for_each_facility(action_chosen)
 
         # Compute facility rewards with noise and clip them between 0 and 1
-        facility_rewards = np.clip([self.facility_means[i][int(numbers[i]) - 1] + np.random.normal(0, self.nl) for i in range(self.number_facilities)], 0, 1)
+        facility_rewards = np.clip([self.facility_means[i][int(numbers[i]) - 1] + np.random.normal(0, self.nl) for i in range(self.number_facilities)], -1, 1)
 
         # Initialize rewards array for the current step
         rewards = np.zeros(self.k)
 
         # Calculate rewards for each agent based on the facilities they visited
         for i, agent_action in enumerate(list(action_chosen)):
-            facilities = list(self.actions[agent_action])
+            facilities = list(self.actions[i][agent_action])
             for k in facilities:
                 rewards[i] += facility_rewards[k]
 
         # Append the rewards and action chosen to the history
         self.agent_rewards.append(rewards)
         self.actions_chosen.append(action_chosen)
-
         # Update the accumulators and counters for each agent
-        for p in range(self.k):
-            self.number[action_chosen] += 1
-            self.sum[p][action_chosen] += rewards[p]
-            self.sum_squared[p][action_chosen] += rewards[p] ** 2
+        if self.s != "nash_ucb":
+            for p in range(self.k):
+                self.number[action_chosen] += 1
+                self.sum[p][action_chosen] += rewards[p]
+                self.sum_squared[p][action_chosen] += rewards[p] ** 2
 
     # Calculate the number of agents visiting each facility
     def number_for_each_facility(self, action_chosen):
@@ -211,12 +214,12 @@ class congestion_game():
         numbers = np.zeros(self.number_facilities)
 
         # Loop through each agent's action
-        for agent_action in list(action_chosen):
+        for i, agent_action in enumerate(list(action_chosen)):
             # Get the list of facilities visited by the agent
-            facilities = list(self.actions[agent_action])
+            facilities = list(self.actions[i][agent_action])
             # Increment the count of agents visiting each facility
-            for i in facilities:
-                numbers[i] += 1
+            for k in facilities:
+                numbers[k] += 1
         # Return the array of agent counts for each facility
         return numbers
 
@@ -235,7 +238,7 @@ class congestion_game():
             # Loop through each agent
             for i, agent in enumerate(range(self.k)):
                 # Get the facilities visited by the agent in the action combination
-                facilities_visited = self.actions[tuple[i]]
+                facilities_visited = self.actions[i][tuple[i]]
                 # Calculate the utility for the agent
                 utility = 0
                 for facility in facilities_visited:
@@ -261,7 +264,7 @@ class congestion_game():
     def check_game(self):
         # Loop through all agents and actions
         for p in range(self.k):
-            for i in range(1, self.n):
+            for i in range(1, len(self.actions[p])):
                 # Construct slices for current and previous actions
                 rel_slice = [slice(None)] * p + [i] + [Ellipsis]
                 prev_slice = [slice(None)] * p + [i - 1] + [Ellipsis]

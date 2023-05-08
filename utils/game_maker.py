@@ -152,8 +152,26 @@ def make_game(game_type, n, k):
         # Create a congestion game with specified number of facilities and agents
         number_facilities = n
         number_agents = k
-        congestion_functions_means = [np.random.uniform(0, 1, size=k) for i in range(number_facilities)]
+        congestion_functions_means = np.flip(np.sort([np.random.uniform(-1, 1, size=k) for i in range(number_facilities)]))
+        return number_facilities, number_agents, congestion_functions_means, None
 
-        return number_facilities, number_agents, congestion_functions_means
+    elif game_type == "single_routing":
+        # Create a congestion game with specified number of facilities and agents
+        number_facilities = n
+        number_agents = k
+        congestion_functions_means = np.flip(np.sort([np.random.uniform(-1, 0, size=k) for i in range(number_facilities)]))
+        actions = [(i,) for i in range(n)]
+        action_spaces = [actions for i in range(number_agents)]
+        return number_facilities, number_agents, congestion_functions_means, action_spaces
+
+    elif game_type == "double_routing":
+        # Create a congestion game with specified number of facilities and agents
+        number_facilities = 6
+        number_agents = k
+        congestion_functions_means = np.flip(np.sort([np.random.uniform(-1, 0, size=k) for i in range(6)]))
+        actions = [(0,4),(0,2,5),(1,5),(0,3,4)]
+        action_spaces = [actions for i in range(number_agents)]
+        return number_facilities, number_agents, congestion_functions_means, action_spaces
+
     else:
         raise RuntimeError("Not a valid game choice!")
