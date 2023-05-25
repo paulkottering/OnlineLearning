@@ -1,6 +1,6 @@
-# Optimistic Normal Form Solver
+# Online Learning in Potential and Congestion Games with Bandit Feedback
 
-This project contains an implementation of algorithms for learning in potential and congestion games with bandit feedbacl with a focus on sample-efficient learning and robustness. The solver supports various algorithms for learning in games, such as Nash-UCB II, NASH-CA, Optimistic Decomposition, and Exponential Weights with Annealing.
+This project contains an implementation of algorithms for learning in potential and congestion games with bandit feedback with a focus on sample-efficient learning and robustness. The solver supports various algorithms for learning in games, such as Nash-UCB II, NASH-CA, Optimistic Decomposition, and Exponential Weights with Annealing.
 
 
 ## Variables / Arguments Explanation
